@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-talexis_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-talexis_secret}
+      POSTGRES_DB: ${DB_NAME:-talexis}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talexis_user -d talexis"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-talexis_user}:${DB_PASSWORD:-talexis_secret}@db:5432/${DB_NAME:-talexis}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  ollama_data:

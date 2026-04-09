@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-talexis_user}:${DB_PASSWORD:-talexis_secret}@db:5432/${DB_NAME:-talexis}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      FRONTEND_URL: http://localhost:5300
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: npm run dev -- --host
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5300:5300"
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

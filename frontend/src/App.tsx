@@ -18,6 +18,8 @@ import { InterviewHistoryPage } from './pages/student/InterviewHistoryPage';
 import { ReadinessPage } from './pages/student/ReadinessPage';
 import { LearningHubPage } from './pages/student/LearningHubPage';
 import { LearningModulePage } from './pages/student/LearningModulePage';
+import { StudentAnalyticsPage } from './pages/student/AnalyticsPage';
+import { SkillsPage } from './pages/student/SkillsPage';
 
 // Company pages
 import { CompanyDashboardPage } from './pages/company/DashboardPage';
@@ -69,7 +71,7 @@ export default function App() {
                 <Route path="dashboard" element={<StudentDashboardPage />} />
                 <Route path="profile" element={<StudentProfilePage />} />
                 <Route path="resume" element={<ResumePage />} />
-                <Route path="skills" element={<PlaceholderPage title="Skill Assessment" />} />
+                <Route path="skills" element={<SkillsPage />} />
                 <Route path="interviews" element={<InterviewSelectPage />} />
                 <Route path="interviews/history" element={<InterviewHistoryPage />} />
                 <Route path="interviews/:id" element={<LiveInterviewPage />} />
@@ -79,7 +81,7 @@ export default function App() {
                 <Route path="readiness" element={<ReadinessPage />} />
                 <Route path="learn" element={<LearningHubPage />} />
                 <Route path="learn/:id" element={<LearningModulePage />} />
-                <Route path="analytics" element={<PlaceholderPage title="Student Analytics" />} />
+                <Route path="analytics" element={<StudentAnalyticsPage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>
