@@ -1,4 +1,5 @@
 import logging
+import random
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
@@ -12,6 +13,14 @@ from app.models.enums import InterviewType, DifficultyLevel, InterviewStatus
 from app.exceptions import NotFoundError, ForbiddenError, ValidationError
 from app.services.llm.local_llm import local_llm
 from app.services.llm.prompts import QUESTION_GENERATION_PROMPT, QUESTION_GENERATION_SYSTEM
+
+# Topic pools for randomization per interview type
+TOPIC_POOLS: dict[str, list[str]] = {
+    "hr": ["teamwork", "conflict resolution", "leadership", "time management", "motivation", "career goals", "strengths and weaknesses", "work culture", "adaptability", "communication"],
+    "technical": ["data structures", "algorithms", "system design", "databases", "API design", "testing", "debugging", "concurrency", "security", "performance optimization"],
+    "behavioral": ["failure experience", "achievement", "difficult decision", "working under pressure", "initiative", "feedback handling", "collaboration", "ethical dilemma", "creativity", "problem solving"],
+    "sales": ["persuasion", "negotiation", "customer objections", "pipeline management", "closing techniques", "relationship building", "product knowledge", "cold calling", "market analysis", "target achievement"],
+}
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +104,20 @@ async def generate_question(db: Session, interview: Interview) -> InterviewQuest
     )
 
     previous_texts = [q.question_text for q in existing_questions]
-    profile_summary = "Student profile"  # Simplified for MVP
+    profile_summary = "Student profile"
     if interview.student and interview.student.parsed_resume:
         summary = interview.student.parsed_resume.get("summary", "")
         if summary:
             profile_summary = str(summary)
+
+    # Randomize: pick a random topic focus to vary questions
+    topics = TOPIC_POOLS.get(interview.interview_type.value, [])
+    used_topics = [q.expected_topics for q in existing_questions if q.expected_topics]
+    used_flat = [t for sublist in used_topics for t in sublist] if used_topics else []
+    available = [t for t in topics if t not in used_flat]
+    if not available:
+        available = topics
+    random_topic = random.choice(available) if available else ""
 
     prompt = QUESTION_GENERATION_PROMPT.format(
         interview_type=interview.interview_type.value,
@@ -107,6 +125,8 @@ async def generate_question(db: Session, interview: Interview) -> InterviewQuest
         profile_summary=profile_summary[:500],
         previous_questions="\n".join(previous_texts) if previous_texts else "None",
     )
+    if random_topic:
+        prompt += f"\n\nFocus this question on the topic: {random_topic}"
 
     try:
         question_text = await local_llm.generate(prompt, system=QUESTION_GENERATION_SYSTEM)
@@ -121,6 +141,7 @@ async def generate_question(db: Session, interview: Interview) -> InterviewQuest
         question_type=interview.interview_type.value,
         difficulty=interview.difficulty_level.value,
         order_index=len(existing_questions),
+        expected_topics=[random_topic] if random_topic else [],
     )
     db.add(question)
     db.commit()

@@ -21,6 +21,7 @@ const studentNav: NavItem[] = [
   { to: '/student/resume', label: 'Resume', icon: <FileText size={20} /> },
   { to: '/student/interviews', label: 'Interviews', icon: <Brain size={20} /> },
   { to: '/student/interviews/history', label: 'History', icon: <ClipboardCheck size={20} /> },
+  { to: '/student/scorecard', label: 'Scorecard', icon: <ClipboardCheck size={20} /> },
   { to: '/student/readiness', label: 'Readiness', icon: <TrendingUp size={20} /> },
   { to: '/student/skills', label: 'Skills', icon: <ClipboardCheck size={20} /> },
   { to: '/student/learn', label: 'Learn', icon: <BookOpen size={20} /> },

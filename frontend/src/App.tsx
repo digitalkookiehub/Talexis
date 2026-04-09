@@ -20,6 +20,7 @@ import { LearningHubPage } from './pages/student/LearningHubPage';
 import { LearningModulePage } from './pages/student/LearningModulePage';
 import { StudentAnalyticsPage } from './pages/student/AnalyticsPage';
 import { SkillsPage } from './pages/student/SkillsPage';
+import { ScorecardPage } from './pages/student/ScorecardPage';
 
 // Company pages
 import { CompanyDashboardPage } from './pages/company/DashboardPage';
@@ -77,7 +78,7 @@ export default function App() {
                 <Route path="interviews/:id" element={<LiveInterviewPage />} />
                 <Route path="interviews/:id/results" element={<InterviewResultsPage />} />
                 <Route path="interviews/:id/feedback" element={<InterviewResultsPage />} />
-                <Route path="scorecard" element={<PlaceholderPage title="Scorecard" />} />
+                <Route path="scorecard" element={<ScorecardPage />} />
                 <Route path="readiness" element={<ReadinessPage />} />
                 <Route path="learn" element={<LearningHubPage />} />
                 <Route path="learn/:id" element={<LearningModulePage />} />

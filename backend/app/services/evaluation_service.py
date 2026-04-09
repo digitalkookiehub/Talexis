@@ -144,6 +144,17 @@ async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEv
     for ev in evaluations:
         db.refresh(ev)
 
+    # Run anti-cheat checks automatically after evaluation
+    try:
+        from app.services.anticheat_service import run_full_anticheat
+        ac_result = run_full_anticheat(db, interview.id)
+        if ac_result["total_flags"] > 0:
+            logger.warning(
+                "Anti-cheat flags for interview %s: %d flags", interview.id, ac_result["total_flags"]
+            )
+    except Exception as e:
+        logger.error("Anti-cheat check failed: %s", str(e))
+
     logger.info("Interview %s evaluated: avg_score=%.1f", interview.id, interview.total_score or 0)
     return evaluations
 
