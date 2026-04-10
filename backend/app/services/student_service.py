@@ -12,6 +12,7 @@ from app.models.user import User
 from app.exceptions import NotFoundError, ConflictError
 from app.services.llm.local_llm import local_llm
 from app.services.llm.prompts import RESUME_PARSING_PROMPT, RESUME_PARSING_SYSTEM
+from app.services.resume_extractor import extract_text_from_file
 
 logger = logging.getLogger(__name__)
 
@@ -78,19 +79,31 @@ async def parse_resume(db: Session, profile: StudentProfile) -> dict:
     if not profile.resume_url:
         raise NotFoundError("Resume not uploaded yet")
 
-    # Read resume text (simple text extraction for MVP)
-    with open(profile.resume_url, "rb") as f:
-        resume_bytes = f.read()
+    # Extract text using format-aware extractor (PDF, DOCX, TXT)
+    resume_text = extract_text_from_file(profile.resume_url)
+    if not resume_text or len(resume_text.strip()) < 10:
+        return {"error": "Could not extract meaningful text from the resume."}
 
-    resume_text = resume_bytes.decode("utf-8", errors="ignore")
+    logger.info("Extracted %d chars from %s", len(resume_text), profile.resume_url)
+
     prompt = RESUME_PARSING_PROMPT.format(resume_text=resume_text[:4000])
 
     try:
         response = await local_llm.generate(prompt, system=RESUME_PARSING_SYSTEM)
-        parsed = json.loads(response)
+        # Try to find JSON in response (LLMs sometimes add prose)
+        start = response.find("{")
+        end = response.rfind("}") + 1
+        if start >= 0 and end > start:
+            parsed = json.loads(response[start:end])
+        else:
+            parsed = json.loads(response)
     except (json.JSONDecodeError, Exception) as e:
         logger.error("Resume parsing failed: %s", str(e))
-        parsed = {"error": "Failed to parse resume", "raw_text": resume_text[:1000]}
+        parsed = {
+            "error": "Failed to parse resume with AI",
+            "raw_text_preview": resume_text[:500],
+            "extraction_success": True,
+        }
 
     profile.parsed_resume = parsed
     if isinstance(parsed.get("skills"), list):
