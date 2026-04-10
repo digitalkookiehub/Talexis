@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-from app.auth.dependencies import get_current_active_user, require_admin
+from app.auth.dependencies import get_current_active_user, require_admin, require_company
 from app.models.user import User
 from app.models.interview import Interview
-from app.models.evaluation import AnswerEvaluation
-from app.models.enums import UserRole, InterviewStatus
+from app.models.company import Company
+from app.models.shortlist import CompanyShortlist
+from app.models.talent_profile import TalentProfile
+from app.models.enums import UserRole, InterviewStatus, ShortlistStatus
 from app.services.student_service import get_or_create_profile
+from app.exceptions import NotFoundError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -62,6 +65,40 @@ async def platform_analytics(
             role.value: db.query(User).filter(User.role == role).count()
             for role in UserRole
         },
+    }
+
+
+@router.get("/company")
+async def company_analytics(
+    user: User = Depends(require_company),
+    db: Session = Depends(get_db),
+) -> dict:
+    company = db.query(Company).filter(Company.user_id == user.id).first()
+    if not company:
+        raise NotFoundError("Company profile")
+
+    shortlists = db.query(CompanyShortlist).filter(
+        CompanyShortlist.company_id == company.id
+    ).all()
+
+    visible_talents = db.query(TalentProfile).filter(
+        TalentProfile.is_visible == True,
+        TalentProfile.consent_given == True,
+    ).count()
+
+    by_status: dict[str, int] = {s.value: 0 for s in ShortlistStatus}
+    for s in shortlists:
+        by_status[s.status.value] = by_status.get(s.status.value, 0) + 1
+
+    return {
+        "available_talent_pool": visible_talents,
+        "total_shortlisted": len(shortlists),
+        "hired": by_status.get("hired", 0),
+        "rejected": by_status.get("rejected", 0),
+        "contacted": by_status.get("contacted", 0),
+        "shortlisted": by_status.get("shortlisted", 0),
+        "by_status": by_status,
+        "conversion_rate": round((by_status.get("hired", 0) / len(shortlists)) * 100, 1) if shortlists else 0,
     }
 
 

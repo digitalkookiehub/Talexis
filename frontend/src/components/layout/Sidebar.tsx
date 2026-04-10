@@ -41,6 +41,7 @@ const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
   { to: '/admin/users', label: 'Users', icon: <Users size={20} /> },
   { to: '/admin/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
+  { to: '/admin/anticheat', label: 'Anti-Cheat', icon: <Heart size={20} /> },
   { to: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 

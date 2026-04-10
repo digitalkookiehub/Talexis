@@ -29,14 +29,14 @@ import { TalentBrowsePage } from './pages/company/TalentBrowsePage';
 import { TalentDetailPage } from './pages/company/TalentDetailPage';
 import { ShortlistPage } from './pages/company/ShortlistPage';
 import { JobsPage } from './pages/company/JobsPage';
+import { CompanyAnalyticsPage } from './pages/company/AnalyticsPage';
 
 // Admin pages
 import { AdminDashboardPage } from './pages/admin/DashboardPage';
 import { UsersPage } from './pages/admin/UsersPage';
 import { AdminAnalyticsPage } from './pages/admin/AnalyticsPage';
-
-// Placeholder for pages not yet built
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { AntiCheatPage } from './pages/admin/AntiCheatPage';
+import { SettingsPage } from './pages/admin/SettingsPage';
 
 import type { UserRole } from './types';
 
@@ -102,7 +102,7 @@ export default function App() {
                 <Route path="talents/:code" element={<TalentDetailPage />} />
                 <Route path="shortlist" element={<ShortlistPage />} />
                 <Route path="jobs" element={<JobsPage />} />
-                <Route path="analytics" element={<PlaceholderPage title="Company Analytics" />} />
+                <Route path="analytics" element={<CompanyAnalyticsPage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>
@@ -119,7 +119,8 @@ export default function App() {
                 <Route index element={<AdminDashboardPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="settings" element={<PlaceholderPage title="System Settings" />} />
+                <Route path="anticheat" element={<AntiCheatPage />} />
+                <Route path="settings" element={<SettingsPage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>
