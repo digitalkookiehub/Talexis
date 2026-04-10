@@ -60,6 +60,7 @@ export interface Interview {
   started_at: string | null;
   completed_at: string | null;
   total_score: number | null;
+  target_questions: number;
   created_at: string;
 }
 

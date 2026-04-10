@@ -12,10 +12,10 @@ class LocalLLMService:
         self.base_url = settings.OLLAMA_BASE_URL
         self.model = settings.OLLAMA_MODEL
 
-    async def generate(self, prompt: str, system: str = "") -> str:
-        """Generate text using local Ollama model."""
+    async def generate(self, prompt: str, system: str = "", timeout: float = 300.0) -> str:
+        """Generate text using local Ollama model. Long timeout for big prompts."""
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.post(
                     f"{self.base_url}/api/generate",
                     json={
@@ -28,10 +28,13 @@ class LocalLLMService:
                 response.raise_for_status()
                 return response.json()["response"]
         except httpx.HTTPStatusError as e:
-            logger.error("Ollama HTTP error: %s", e.response.status_code)
+            logger.error("Ollama HTTP error: %s - %s", e.response.status_code, e.response.text[:200])
             raise
         except httpx.ConnectError:
             logger.error("Cannot connect to Ollama at %s", self.base_url)
+            raise
+        except httpx.ReadTimeout:
+            logger.error("Ollama request timed out after %s seconds", timeout)
             raise
 
     async def is_available(self) -> bool:

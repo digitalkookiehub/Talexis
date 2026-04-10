@@ -19,37 +19,47 @@ from app.services.llm.prompts import ANSWER_EVALUATION_PROMPT, ANSWER_EVALUATION
 logger = logging.getLogger(__name__)
 
 
-async def _evaluate_answer(prompt: str) -> dict:
-    """Evaluate using OpenAI if key is set, otherwise fallback to Ollama."""
-    if settings.OPENAI_API_KEY:
-        return await cloud_llm.evaluate(prompt, system=ANSWER_EVALUATION_SYSTEM)
+_DEFAULT_RESULT = {
+    "communication_score": 5.0,
+    "technical_score": 5.0,
+    "confidence_score": 5.0,
+    "structure_score": 5.0,
+    "overall_score": 5.0,
+    "feedback": "Evaluation completed with default scoring.",
+    "strengths": [],
+    "weaknesses": [],
+    "improved_answer": "",
+    "risk_flags": [],
+}
 
-    # Fallback: use local Ollama for evaluation
-    logger.info("No OpenAI key configured, using local LLM for evaluation")
-    ollama_prompt = f"{ANSWER_EVALUATION_SYSTEM}\n\n{prompt}\n\nRespond ONLY with valid JSON, no other text."
-    raw = await local_llm.generate(ollama_prompt)
-    # Extract JSON from response
+
+async def _evaluate_answer(prompt: str) -> dict:
+    """Evaluate using local LLM first, fall back to OpenAI if configured."""
+    # Try local LLM (Ollama) first
     try:
-        # Try to find JSON in the response
+        ollama_prompt = f"{ANSWER_EVALUATION_SYSTEM}\n\n{prompt}\n\nRespond ONLY with valid JSON, no other text."
+        raw = await local_llm.generate(ollama_prompt, timeout=300.0)
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start >= 0 and end > start:
-            return json.loads(raw[start:end])
-    except json.JSONDecodeError:
-        pass
-    # Return defaults if parsing fails
-    return {
-        "communication_score": 5.0,
-        "technical_score": 5.0,
-        "confidence_score": 5.0,
-        "structure_score": 5.0,
-        "overall_score": 5.0,
-        "feedback": "Evaluation completed with local model.",
-        "strengths": [],
-        "weaknesses": [],
-        "improved_answer": "",
-        "risk_flags": [],
-    }
+            result = json.loads(raw[start:end])
+            logger.info("Evaluation completed via local LLM")
+            return result
+        raise ValueError("No JSON found in local LLM response")
+    except Exception as local_err:
+        logger.warning("Local LLM evaluation failed: %s — trying OpenAI fallback", repr(local_err))
+
+        # Fall back to OpenAI if configured
+        if settings.OPENAI_API_KEY:
+            try:
+                result = await cloud_llm.evaluate(prompt, system=ANSWER_EVALUATION_SYSTEM)
+                logger.info("Evaluation completed via OpenAI fallback")
+                return result
+            except Exception as cloud_err:
+                logger.error("OpenAI fallback also failed: %s", repr(cloud_err))
+
+        # Both failed: return defaults so the interview still completes
+        return {**_DEFAULT_RESULT, "feedback": "Evaluation unavailable — both local and cloud LLMs failed."}
 
 
 async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEvaluation]:

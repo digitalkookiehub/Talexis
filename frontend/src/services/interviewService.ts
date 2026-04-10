@@ -7,8 +7,11 @@ export interface InterviewHistoryResponse {
 }
 
 export const interviewService = {
-  start: (interview_type: InterviewType, difficulty_level: DifficultyLevel) =>
-    api.post<Interview>('/interviews/start', { interview_type, difficulty_level }).then((r) => r.data),
+  start: (interview_type: InterviewType, difficulty_level: DifficultyLevel, target_questions = 5) =>
+    api.post<Interview>('/interviews/start', { interview_type, difficulty_level, target_questions }).then((r) => r.data),
+
+  active: () =>
+    api.get<Interview | null>('/interviews/active').then((r) => r.data),
 
   get: (id: number) =>
     api.get<Interview>(`/interviews/${id}`).then((r) => r.data),

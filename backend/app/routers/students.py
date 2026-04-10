@@ -12,7 +12,7 @@ from app.schemas.student import (
 )
 from app.services.student_service import (
     create_profile, get_or_create_profile, update_profile,
-    save_resume, parse_resume, get_skill_assessments,
+    save_resume, parse_resume, get_skill_assessments, screen_resume,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,6 +72,17 @@ async def parse_student_resume(
     profile = get_or_create_profile(db, user)
     parsed = await parse_resume(db, profile)
     return {"message": "Resume parsed", "data": parsed}
+
+
+@router.post("/resume/screen")
+async def screen_student_resume(
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict:
+    """AI-powered resume screening with score and improvement suggestions."""
+    profile = get_or_create_profile(db, user)
+    result = await screen_resume(db, profile)
+    return result
 
 
 @router.get("/resume/parsed")

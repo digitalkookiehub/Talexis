@@ -1,6 +1,28 @@
 import api from './api';
 import type { StudentProfile } from '../types';
 
+export interface ResumeScreening {
+  overall_score?: number;
+  category_scores?: {
+    completeness: number;
+    clarity: number;
+    skills_relevance: number;
+    experience_quality: number;
+    overall_polish: number;
+  };
+  strengths?: string[];
+  weaknesses?: string[];
+  suggestions?: Array<{
+    section: string;
+    suggestion: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+  missing_sections?: string[];
+  summary?: string;
+  error?: string;
+  details?: string;
+}
+
 export const studentService = {
   getProfile: () => api.get<StudentProfile>('/students/profile').then((r) => r.data),
 
@@ -20,6 +42,9 @@ export const studentService = {
 
   parseResume: () =>
     api.post<{ message: string; data: Record<string, unknown> }>('/students/resume/parse').then((r) => r.data),
+
+  screenResume: () =>
+    api.post<ResumeScreening>('/students/resume/screen').then((r) => r.data),
 
   getParsedResume: () =>
     api.get<{ parsed_resume: Record<string, unknown> | null }>('/students/resume/parsed').then((r) => r.data),

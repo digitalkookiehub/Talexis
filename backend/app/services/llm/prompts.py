@@ -119,3 +119,52 @@ If a field cannot be determined from the resume, use null or an empty list."""
 RESUME_PARSING_SYSTEM = """You are an expert resume parser. Extract structured information \
 from resume text accurately. If information is ambiguous or missing, use null rather than \
 guessing. Return valid JSON only."""
+
+# v1 - Resume Screening (Cloud or Local LLM)
+RESUME_SCREENING_PROMPT = """Analyze this parsed resume and provide a comprehensive screening report.
+
+Parsed Resume:
+{parsed_resume}
+
+Student Profile Context:
+- Branch: {branch}
+- College: {college}
+- Graduation Year: {graduation_year}
+
+Score the resume on these dimensions (0-10 each):
+1. Completeness - Are all important sections present (contact, education, skills, experience)?
+2. Clarity - Is the information clear, well-organized, and easy to understand?
+3. Skills Relevance - Are the skills relevant and well-articulated for the field?
+4. Experience Quality - Is the experience meaningful, with specific achievements?
+5. Overall Polish - Grammar, formatting, professionalism
+
+Then identify:
+- Top 3 strengths
+- Top 3 weaknesses
+- 5 specific actionable suggestions for improvement (with priority: high/medium/low)
+- Missing sections that should be added
+
+Respond in JSON format:
+{{
+  "overall_score": <0-10>,
+  "category_scores": {{
+    "completeness": <0-10>,
+    "clarity": <0-10>,
+    "skills_relevance": <0-10>,
+    "experience_quality": <0-10>,
+    "overall_polish": <0-10>
+  }},
+  "strengths": ["<strength1>", "<strength2>", "<strength3>"],
+  "weaknesses": ["<weakness1>", "<weakness2>", "<weakness3>"],
+  "suggestions": [
+    {{"section": "<section_name>", "suggestion": "<actionable suggestion>", "priority": "high|medium|low"}},
+    ...
+  ],
+  "missing_sections": ["<section1>", "<section2>"],
+  "summary": "<2-3 sentence overall assessment>"
+}}"""
+
+RESUME_SCREENING_SYSTEM = """You are an expert career counselor and resume reviewer. You provide \
+honest, constructive feedback to help students improve their resumes for placements. Your scoring \
+is calibrated: 0-3 needs major work, 4-5 below average, 6-7 good, 8-9 excellent, 10 exceptional. \
+Always provide specific, actionable suggestions. Return valid JSON only."""

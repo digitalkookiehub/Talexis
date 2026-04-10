@@ -62,10 +62,18 @@ def increment_attempt(db: Session, student_id: int, interview_type: InterviewTyp
 
 
 def start_interview(
-    db: Session, student: StudentProfile, interview_type: InterviewType, difficulty: DifficultyLevel
+    db: Session,
+    student: StudentProfile,
+    interview_type: InterviewType,
+    difficulty: DifficultyLevel,
+    target_questions: int = 5,
 ) -> Interview:
     check_attempt_limit(db, student.id, interview_type)
     increment_attempt(db, student.id, interview_type)
+
+    # Clamp to allowed values
+    if target_questions not in (3, 5, 10):
+        target_questions = 5
 
     interview = Interview(
         student_id=student.id,
@@ -73,11 +81,12 @@ def start_interview(
         difficulty_level=difficulty,
         status=InterviewStatus.in_progress,
         started_at=datetime.now(timezone.utc),
+        target_questions=target_questions,
     )
     db.add(interview)
     db.commit()
     db.refresh(interview)
-    logger.info("Interview %s started for student %s", interview.id, student.id)
+    logger.info("Interview %s started for student %s (%d questions)", interview.id, student.id, target_questions)
     return interview
 
 
@@ -178,14 +187,25 @@ def submit_answer(
     return answer
 
 
-def complete_interview(db: Session, interview: Interview) -> Interview:
+async def complete_interview(db: Session, interview: Interview) -> Interview:
+    """Mark interview complete and automatically run evaluation."""
     if interview.status != InterviewStatus.in_progress:
         raise ValidationError("Interview is not in progress")
     interview.status = InterviewStatus.completed
     interview.completed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(interview)
-    logger.info("Interview %s completed", interview.id)
+    logger.info("Interview %s completed, triggering auto-evaluation", interview.id)
+
+    # Auto-evaluate
+    try:
+        from app.services.evaluation_service import evaluate_interview
+        await evaluate_interview(db, interview)
+        db.refresh(interview)
+    except Exception as e:
+        logger.error("Auto-evaluation failed for interview %s: %s", interview.id, repr(e))
+        # Don't block the completion — student can re-trigger from results page
+
     return interview
 
 
@@ -194,3 +214,16 @@ def get_interview_history(db: Session, student_id: int, skip: int = 0, limit: in
     total = query.count()
     interviews = query.order_by(Interview.created_at.desc()).offset(skip).limit(limit).all()
     return interviews, total
+
+
+def get_active_interview(db: Session, student_id: int) -> Interview | None:
+    """Find any in-progress interview for the student."""
+    return (
+        db.query(Interview)
+        .filter(
+            Interview.student_id == student_id,
+            Interview.status == InterviewStatus.in_progress,
+        )
+        .order_by(Interview.created_at.desc())
+        .first()
+    )

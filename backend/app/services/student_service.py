@@ -10,8 +10,13 @@ from app.models.student import StudentProfile
 from app.models.skill_assessment import SkillAssessment
 from app.models.user import User
 from app.exceptions import NotFoundError, ConflictError
+from app.config import settings
 from app.services.llm.local_llm import local_llm
-from app.services.llm.prompts import RESUME_PARSING_PROMPT, RESUME_PARSING_SYSTEM
+from app.services.llm.cloud_llm import cloud_llm
+from app.services.llm.prompts import (
+    RESUME_PARSING_PROMPT, RESUME_PARSING_SYSTEM,
+    RESUME_SCREENING_PROMPT, RESUME_SCREENING_SYSTEM,
+)
 from app.services.resume_extractor import extract_text_from_file
 
 logger = logging.getLogger(__name__)
@@ -63,12 +68,24 @@ def update_profile(db: Session, profile: StudentProfile, **kwargs: object) -> St
 
 async def save_resume(db: Session, profile: StudentProfile, file_content: bytes, filename: str) -> str:
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+
+    # Delete old resume file if it exists
+    if profile.resume_url and os.path.exists(profile.resume_url):
+        try:
+            os.remove(profile.resume_url)
+            logger.info("Deleted old resume: %s", profile.resume_url)
+        except OSError as e:
+            logger.warning("Could not delete old resume: %s", str(e))
+
     ext = os.path.splitext(filename)[1]
     saved_name = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(settings.UPLOAD_DIR, saved_name)
     with open(filepath, "wb") as f:
         f.write(file_content)
+
+    # Update profile: new resume URL, clear stale parsed data
     profile.resume_url = filepath
+    profile.parsed_resume = None  # Clear old parsed data — needs re-parsing
     db.commit()
     db.refresh(profile)
     logger.info("Resume saved for student %s: %s", profile.id, filepath)
@@ -115,3 +132,69 @@ async def parse_resume(db: Session, profile: StudentProfile) -> dict:
 
 def get_skill_assessments(db: Session, student_id: int) -> list[SkillAssessment]:
     return db.query(SkillAssessment).filter(SkillAssessment.student_id == student_id).all()
+
+
+async def screen_resume(db: Session, profile: StudentProfile) -> dict:
+    """AI-powered resume screening with score and improvement suggestions."""
+    if not profile.parsed_resume or "error" in (profile.parsed_resume or {}):
+        raise NotFoundError("Resume not parsed yet — parse it first")
+
+    parsed_str = json.dumps(profile.parsed_resume, indent=2)
+    prompt = RESUME_SCREENING_PROMPT.format(
+        parsed_resume=parsed_str[:3000],
+        branch=profile.branch or "Not specified",
+        college=profile.college_name or "Not specified",
+        graduation_year=profile.graduation_year or "Not specified",
+    )
+
+    result: dict | None = None
+    used_provider = "local"
+
+    # Try local LLM first (Ollama)
+    try:
+        full_prompt = f"{RESUME_SCREENING_SYSTEM}\n\n{prompt}\n\nRespond ONLY with valid JSON."
+        raw = await local_llm.generate(full_prompt, timeout=300.0)
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start >= 0 and end > start:
+            result = json.loads(raw[start:end])
+        else:
+            raise ValueError("No JSON found in local LLM response")
+        logger.info("Resume screened via Ollama for student %s", profile.id)
+    except Exception as local_err:
+        logger.warning("Local LLM screening failed: %s — trying OpenAI fallback", repr(local_err))
+
+        # Fall back to OpenAI
+        if settings.OPENAI_API_KEY:
+            try:
+                result = await cloud_llm.evaluate(prompt, system=RESUME_SCREENING_SYSTEM)
+                used_provider = "openai"
+                logger.info("Resume screened via OpenAI fallback for student %s", profile.id)
+            except Exception as cloud_err:
+                logger.error("OpenAI fallback also failed: %s", repr(cloud_err))
+                return {
+                    "error": "Screening failed on both local and cloud LLMs.",
+                    "details": f"Local: {type(local_err).__name__}: {str(local_err) or repr(local_err)} | Cloud: {type(cloud_err).__name__}: {str(cloud_err) or repr(cloud_err)}",
+                }
+        else:
+            return {
+                "error": "Local LLM screening failed and no OpenAI key configured for fallback.",
+                "details": f"{type(local_err).__name__}: {str(local_err) or repr(local_err)}",
+            }
+
+    if result is None:
+        return {"error": "Unknown screening failure"}
+
+    # Save the screening to parsed_resume metadata
+    try:
+        if profile.parsed_resume:
+            from sqlalchemy.orm.attributes import flag_modified
+            profile.parsed_resume = {**profile.parsed_resume, "_screening": result, "_screening_provider": used_provider}
+            flag_modified(profile, "parsed_resume")
+            db.commit()
+            db.refresh(profile)
+    except Exception as save_err:
+        logger.warning("Could not save screening result: %s", repr(save_err))
+
+    logger.info("Resume screened for student %s: score=%s, provider=%s", profile.id, result.get("overall_score"), used_provider)
+    return result

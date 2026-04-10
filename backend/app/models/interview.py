@@ -19,6 +19,7 @@ class Interview(Base, TimestampMixin):
     started_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     total_score = Column(Float, nullable=True)
+    target_questions = Column(Integer, nullable=False, default=5)
 
     student = relationship("StudentProfile", back_populates="interviews")
     questions = relationship("InterviewQuestion", back_populates="interview", cascade="all, delete-orphan")

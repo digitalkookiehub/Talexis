@@ -8,6 +8,7 @@ from app.models.enums import InterviewType, DifficultyLevel, InterviewStatus
 class InterviewCreate(BaseModel):
     interview_type: InterviewType
     difficulty_level: DifficultyLevel
+    target_questions: int = 5
 
 
 class InterviewResponse(BaseModel):
@@ -19,6 +20,7 @@ class InterviewResponse(BaseModel):
     started_at: datetime | None = None
     completed_at: datetime | None = None
     total_score: float | None = None
+    target_questions: int = 5
     created_at: datetime | None = None
 
     class Config:

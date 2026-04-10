@@ -13,6 +13,7 @@ from app.schemas.interview import (
 from app.services.interview_service import (
     start_interview, get_interview, generate_question,
     submit_answer, complete_interview, get_interview_history,
+    get_active_interview,
 )
 from app.services.student_service import get_or_create_profile
 
@@ -27,7 +28,22 @@ async def start(
     db: Session = Depends(get_db),
 ) -> InterviewResponse:
     profile = get_or_create_profile(db, user)
-    interview = start_interview(db, profile, req.interview_type, req.difficulty_level)
+    interview = start_interview(
+        db, profile, req.interview_type, req.difficulty_level, req.target_questions
+    )
+    return InterviewResponse.model_validate(interview)
+
+
+@router.get("/active", response_model=InterviewResponse | None)
+async def active(
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> InterviewResponse | None:
+    """Find any in-progress interview to resume."""
+    profile = get_or_create_profile(db, user)
+    interview = get_active_interview(db, profile.id)
+    if interview is None:
+        return None
     return InterviewResponse.model_validate(interview)
 
 
@@ -87,7 +103,7 @@ async def complete(
 ) -> InterviewResponse:
     profile = get_or_create_profile(db, user)
     interview = get_interview(db, interview_id, profile.id)
-    completed = complete_interview(db, interview)
+    completed = await complete_interview(db, interview)
     return InterviewResponse.model_validate(completed)
 
 
