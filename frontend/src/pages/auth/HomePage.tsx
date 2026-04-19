@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const portals = [
   {
-    to: '/student/login',
+    to: '/pricing?for=candidate',
     icon: <GraduationCap size={32} />,
     title: 'Candidate',
     desc: 'Experienced professionals and independent candidates — practice AI mock interviews, build your scorecard, and get discovered.',
@@ -13,7 +13,7 @@ const portals = [
     hover: 'hover:shadow-blue-200',
   },
   {
-    to: '/placement/login',
+    to: '/pricing?for=college',
     icon: <Users size={32} />,
     title: 'Placement Officer',
     desc: 'Manage your college students, track readiness, approve schedules, and coordinate with companies.',

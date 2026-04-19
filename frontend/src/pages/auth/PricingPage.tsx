@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MeshBackground } from '../../components/layout/MeshBackground';
 import { CheckCircle, X, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -49,7 +49,7 @@ const plans: PlanCard[] = [
       { text: 'Full readiness tracking', included: true },
     ],
     cta: 'Start Pro',
-    ctaLink: '/student/login',
+    ctaLink: '/student/login?plan=pro_candidate',
   },
   {
     name: 'College Plan',
@@ -65,8 +65,8 @@ const plans: PlanCard[] = [
       { text: 'College analytics & placement tracking', included: true },
       { text: 'Candidate recommendation to companies', included: true },
     ],
-    cta: 'Contact Sales',
-    ctaLink: '/placement/login',
+    cta: 'Get Started',
+    ctaLink: '/placement/login?plan=college',
   },
 ];
 
@@ -86,7 +86,7 @@ const companyPlans: PlanCard[] = [
       { text: 'CSV export & comparison', included: false },
     ],
     cta: 'Request Demo',
-    ctaLink: '/hire/login',
+    ctaLink: '/hire/login?tab=demo',
   },
   {
     name: 'Company Growth',
@@ -104,7 +104,7 @@ const companyPlans: PlanCard[] = [
       { text: 'CSV export & candidate comparison', included: true },
     ],
     cta: 'Request Demo',
-    ctaLink: '/hire/login',
+    ctaLink: '/hire/login?tab=demo',
   },
   {
     name: 'Enterprise',
@@ -121,7 +121,7 @@ const companyPlans: PlanCard[] = [
       { text: 'API access', included: true },
     ],
     cta: 'Contact Sales',
-    ctaLink: '/hire/login',
+    ctaLink: '/hire/login?tab=demo',
   },
 ];
 
@@ -168,6 +168,9 @@ function PlanCardComponent({ plan, index }: { plan: PlanCard; index: number }) {
 }
 
 export function PricingPage() {
+  const [searchParams] = useSearchParams();
+  const forType = searchParams.get('for'); // 'candidate' | 'college' | null
+
   return (
     <div className="min-h-screen p-4 pb-16">
       <MeshBackground />
@@ -181,13 +184,23 @@ export function PricingPage() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">T</div>
-            <h1 className="text-3xl font-bold text-gray-900">Talexis Pricing</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {forType === 'candidate' ? 'Candidate Plans' : forType === 'college' ? 'College Plans' : 'Talexis Pricing'}
+            </h1>
           </div>
-          <p className="text-gray-500 text-lg max-w-lg mx-auto">Choose the plan that fits your needs. Start free, upgrade anytime.</p>
+          <p className="text-gray-500 text-lg max-w-lg mx-auto">
+            {forType === 'candidate' ? 'Choose a plan to start practicing AI mock interviews and get discovered by companies.' :
+             forType === 'college' ? 'Choose a plan for your college placement office to manage candidates and coordinate with companies.' :
+             'Choose the plan that fits your needs. Start free, upgrade anytime.'}
+          </p>
         </div>
 
         {/* Candidate & College Plans */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">For Candidates & Colleges</h2>
+        {(!forType || forType === 'candidate' || forType === 'college') && (
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          {forType === 'candidate' ? 'Choose Your Plan' : forType === 'college' ? 'College Plan' : 'For Candidates & Colleges'}
+        </h2>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {plans.map((plan, i) => <PlanCardComponent key={plan.name} plan={plan} index={i} />)}
         </div>
