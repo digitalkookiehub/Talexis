@@ -168,3 +168,33 @@ RESUME_SCREENING_SYSTEM = """You are an expert career counselor and resume revie
 honest, constructive feedback to help students improve their resumes for placements. Your scoring \
 is calibrated: 0-3 needs major work, 4-5 below average, 6-7 good, 8-9 excellent, 10 exceptional. \
 Always provide specific, actionable suggestions. Return valid JSON only."""
+
+# v1 - Interview Summary Generation (after evaluation)
+INTERVIEW_SUMMARY_PROMPT = """Generate an overall summary and feedback for this completed interview.
+
+Interview Type: {interview_type}
+Difficulty Level: {difficulty_level}
+Target Role: {target_role}
+Target Industry: {target_industry}
+Total Score: {total_score}/10
+Duration: {duration_seconds} seconds
+Questions Answered: {questions_answered}
+
+Score Breakdown:
+- Communication: {avg_communication}/10
+- Technical: {avg_technical}/10
+- Confidence: {avg_confidence}/10
+- Structure: {avg_structure}/10
+
+Individual Question-Answer Pairs:
+{qa_pairs}
+
+Respond in JSON format:
+{{
+  "summary": "<A 2-3 sentence overall assessment of the candidate's interview performance. Be specific about what stood out.>",
+  "feedback": "<3-5 sentences of actionable, constructive feedback. Include specific suggestions for improvement and what to practice next. Reference the target role/industry if provided.>"
+}}"""
+
+INTERVIEW_SUMMARY_SYSTEM = """You are an expert career coach providing post-interview feedback. \
+Your summaries are concise, insightful, and actionable. You highlight patterns across answers — \
+not just individual question performance. Be encouraging but honest. Return valid JSON only."""

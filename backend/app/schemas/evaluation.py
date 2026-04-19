@@ -25,6 +25,12 @@ class ScorecardResponse(BaseModel):
     interview_type: str
     difficulty: str
     total_score: float | None
+    target_role: str | None = None
+    target_industry: str | None = None
+    duration_seconds: int | None = None
+    questions_answered: int | None = 0
+    overall_summary: str | None = None
+    overall_feedback: str | None = None
     evaluations: list[EvaluationResponse]
     avg_communication: float
     avg_technical: float

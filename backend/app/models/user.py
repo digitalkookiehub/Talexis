@@ -16,6 +16,7 @@ class User(Base, TimestampMixin):
     role = Column(Enum(UserRole), default=UserRole.student, nullable=False)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    college_name = Column(String(200), nullable=True)  # Used by college_admin to scope their college
 
     # Relationships
     student_profile = relationship(

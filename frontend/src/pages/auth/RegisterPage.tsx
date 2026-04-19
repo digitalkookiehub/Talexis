@@ -45,7 +45,7 @@ export function RegisterPage() {
       <GlassCard className="w-full max-w-md bg-white/80 backdrop-blur-xl">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-3">
-            <GraduationCap className="text-purple-600" size={40} />
+            <GraduationCap className="text-emerald-600" size={40} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
           <p className="text-gray-500 mt-1">Join Talexis today</p>
@@ -90,7 +90,7 @@ export function RegisterPage() {
                   onClick={() => setRole(r.value)}
                   className={`p-3 rounded-xl border-2 text-left transition-colors ${
                     role === r.value
-                      ? 'border-purple-500 bg-purple-50'
+                      ? 'border-emerald-500 bg-emerald-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -110,7 +110,7 @@ export function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-purple-600 hover:underline font-medium">
+          <Link to="/login" className="text-emerald-600 hover:underline font-medium">
             Sign In
           </Link>
         </p>

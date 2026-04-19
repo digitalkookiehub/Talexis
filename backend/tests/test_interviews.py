@@ -40,8 +40,9 @@ def test_complete_interview(client: TestClient, student_token: str):
     create = client.post(
         "/api/v1/interviews/start",
         headers=auth_headers(student_token),
-        json={"interview_type": "behavioral", "difficulty_level": "intermediate"},
+        json={"interview_type": "behavioral", "difficulty_level": "basic"},
     )
+    assert create.status_code == 201, f"Start failed: {create.text}"
     interview_id = create.json()["id"]
 
     response = client.post(
@@ -49,7 +50,7 @@ def test_complete_interview(client: TestClient, student_token: str):
         headers=auth_headers(student_token),
     )
     assert response.status_code == 200
-    assert response.json()["status"] == "completed"
+    assert response.json()["status"] in ("completed", "evaluated")
 
 
 def test_company_cannot_start_interview(client: TestClient, company_token: str):

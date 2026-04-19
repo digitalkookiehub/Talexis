@@ -11,7 +11,7 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
     <PageWrapper className="p-0">
       <GlassCard className="bg-white border-gray-100 text-center py-12">
-        <Construction className="mx-auto text-purple-400 mb-4" size={48} />
+        <Construction className="mx-auto text-emerald-400 mb-4" size={48} />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
         <p className="text-gray-500">{description ?? 'This page is coming soon.'}</p>
       </GlassCard>

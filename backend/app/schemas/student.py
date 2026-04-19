@@ -19,6 +19,13 @@ class StudentProfileUpdate(BaseModel):
     skills: list[str] | None = None
     interests: list[str] | None = None
     bio: str | None = None
+    experience_level: str | None = None
+    years_of_experience: int | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
+    preferred_roles: list[str] | None = None
+    preferred_locations: list[str] | None = None
 
 
 class StudentProfileResponse(BaseModel):
@@ -35,6 +42,13 @@ class StudentProfileResponse(BaseModel):
     resume_url: str | None
     parsed_resume: dict | None
     baseline_score: float | None
+    experience_level: str | None = None
+    years_of_experience: int | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
+    preferred_roles: list[str] = []
+    preferred_locations: list[str] = []
 
     class Config:
         from_attributes = True

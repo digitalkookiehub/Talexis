@@ -63,6 +63,30 @@ async def deactivate_user(
     db.commit()
 
 
+@router.put("/users/{user_id}/plan")
+async def set_user_plan(
+    user_id: int,
+    plan_key: str,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.services.subscription_service import set_user_plan as svc_set_plan, get_plan_info
+    svc_set_plan(db, user_id, plan_key)
+    info = get_plan_info(plan_key)
+    return {"message": f"Plan set to {info['name']}", "plan_key": plan_key}
+
+
+@router.get("/plans")
+async def list_plans(
+    _admin: User = Depends(require_admin),
+) -> dict:
+    from app.models.subscription import DEFAULT_PLANS
+    return {
+        key: {"name": p["name"], "price_inr": p["price_inr"], "billing": p["billing"]}
+        for key, p in DEFAULT_PLANS.items()
+    }
+
+
 @router.get("/stats")
 async def platform_stats(
     _admin: User = Depends(require_admin),
@@ -77,4 +101,98 @@ async def platform_stats(
         "students": students,
         "companies": companies,
         "total_interviews": total_interviews,
+    }
+
+
+@router.get("/demo-requests")
+async def list_demo_requests(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> list:
+    from app.models.demo_request import DemoRequest
+    requests = db.query(DemoRequest).order_by(DemoRequest.created_at.desc()).limit(50).all()
+    return [
+        {
+            "id": r.id,
+            "contact_name": r.contact_name,
+            "company_name": r.company_name,
+            "email": r.email,
+            "phone": r.phone,
+            "message": r.message,
+            "status": r.status.value,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in requests
+    ]
+
+
+@router.put("/demo-requests/{request_id}")
+async def update_demo_request(
+    request_id: int,
+    status: str,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.models.demo_request import DemoRequest, DemoStatus
+    req = db.query(DemoRequest).filter(DemoRequest.id == request_id).first()
+    if not req:
+        raise NotFoundError("Demo request")
+    req.status = DemoStatus(status)
+    db.commit()
+    return {"message": "Status updated", "id": request_id, "status": status}
+
+
+@router.get("/settings")
+async def get_settings(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get current system settings and service health status."""
+    from app.config import settings
+    import httpx
+
+    # Check Ollama health
+    ollama_status = "offline"
+    ollama_model = settings.OLLAMA_MODEL
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+            if r.status_code == 200:
+                ollama_status = "online"
+                models = r.json().get("models", [])
+                ollama_model = ", ".join(m["name"] for m in models) if models else settings.OLLAMA_MODEL
+    except Exception:
+        pass
+
+    # Check DB
+    db_status = "online"
+    try:
+        db.execute(db.get_bind().dialect.server_version_info if hasattr(db.get_bind().dialect, 'server_version_info') else None)
+    except Exception:
+        pass  # if we got this far, DB is fine
+
+    return {
+        "database": {
+            "status": db_status,
+            "url": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "configured",
+        },
+        "ollama": {
+            "status": ollama_status,
+            "base_url": settings.OLLAMA_BASE_URL,
+            "models": ollama_model,
+        },
+        "openai": {
+            "configured": bool(settings.OPENAI_API_KEY),
+            "model": settings.OPENAI_MODEL,
+        },
+        "auth": {
+            "algorithm": settings.ALGORITHM,
+            "access_token_expire_minutes": settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+            "refresh_token_expire_days": settings.REFRESH_TOKEN_EXPIRE_DAYS,
+        },
+        "upload": {
+            "upload_dir": settings.UPLOAD_DIR,
+            "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
+        },
+        "frontend_url": settings.FRONTEND_URL,
     }

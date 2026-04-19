@@ -44,13 +44,13 @@ export function SkillsPage() {
   };
 
   if (loading) {
-    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></PageWrapper>;
+    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></PageWrapper>;
   }
 
   // Build dimension data from readiness
   const dimensions = readiness ? [
     { name: 'Communication', score: readiness.communication_avg, color: 'from-blue-400 to-blue-600' },
-    { name: 'Technical', score: readiness.technical_avg, color: 'from-purple-400 to-purple-600' },
+    { name: 'Technical', score: readiness.technical_avg, color: 'from-emerald-400 to-emerald-600' },
     { name: 'Confidence', score: readiness.confidence_avg, color: 'from-green-400 to-green-600' },
     { name: 'Structure', score: readiness.structure_avg, color: 'from-orange-400 to-orange-600' },
   ] : [];
@@ -121,7 +121,7 @@ export function SkillsPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {skills.map((skill) => (
               <div key={skill.id} className="p-3 bg-gray-50 rounded-xl text-center">
-                <p className="text-lg font-bold text-purple-600">{skill.score.toFixed(1)}</p>
+                <p className="text-lg font-bold text-emerald-600">{skill.score.toFixed(1)}</p>
                 <p className="text-xs text-gray-600 mt-1">{skill.skill_name}</p>
               </div>
             ))}

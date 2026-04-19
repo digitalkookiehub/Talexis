@@ -1,17 +1,20 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
 import { PageWrapper } from '../../components/layout/PageWrapper';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { AnimatedInput } from '../../components/ui/AnimatedInput';
 import { companyService } from '../../services/companyService';
 import type { Company } from '../../types';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Building2, Save, Loader2, Camera } from 'lucide-react';
 
 export function CompanyProfilePage() {
   const [exists, setExists] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [companyName, setCompanyName] = useState('');
   const [industry, setIndustry] = useState('');
@@ -27,6 +30,10 @@ export function CompanyProfilePage() {
       setSize(p.size ?? '');
       setWebsite(p.website ?? '');
       setDescription(p.description ?? '');
+      if ((p as unknown as Record<string, unknown>).logo_url) {
+        const logo = (p as unknown as Record<string, unknown>).logo_url as string;
+        setLogoUrl(logo);
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -58,7 +65,7 @@ export function CompanyProfilePage() {
   };
 
   if (loading) {
-    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></PageWrapper>;
+    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></PageWrapper>;
   }
 
   return (
@@ -71,6 +78,53 @@ export function CompanyProfilePage() {
         </div>
       </div>
 
+      {/* Logo */}
+      <GlassCard className="bg-white border-gray-100 mb-6">
+        <div className="flex items-center gap-5">
+          <div className="relative group">
+            {logoUrl ? (
+              <img
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:8001'}/uploads/${logoUrl.split(/[/\\]/).pop()}`}
+                alt="Logo"
+                className="w-20 h-20 rounded-xl object-cover border-2 border-emerald-200"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-2xl font-bold">
+                {(companyName || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={() => logoInputRef.current?.click()}
+              disabled={uploadingLogo}
+              className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+            >
+              {uploadingLogo ? <Loader2 className="animate-spin text-white" size={20} /> : <Camera className="text-white" size={20} />}
+            </button>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp"
+              className="hidden"
+              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingLogo(true);
+                try {
+                  const result = await companyService.uploadLogo(file);
+                  setLogoUrl(result.path);
+                } catch { setMessage('Logo upload failed'); }
+                finally { setUploadingLogo(false); }
+              }}
+            />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-lg">{companyName || 'Your Company'}</p>
+            <p className="text-sm text-gray-500">{industry || 'Set your industry'}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Hover the logo to change</p>
+          </div>
+        </div>
+      </GlassCard>
+
       <GlassCard className="bg-white border-gray-100">
         <form onSubmit={(e) => void handleSave(e)} className="space-y-4">
           <AnimatedInput label="Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="TechCorp" required />
@@ -78,7 +132,7 @@ export function CompanyProfilePage() {
             <AnimatedInput label="Industry" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="Technology" />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Company Size</label>
-              <select value={size} onChange={(e) => setSize(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none">
+              <select value={size} onChange={(e) => setSize(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 outline-none">
                 <option value="">Select size</option>
                 <option value="1-10">1-10</option>
                 <option value="10-50">10-50</option>
@@ -91,7 +145,7 @@ export function CompanyProfilePage() {
           <AnimatedInput label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://example.com" />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none" rows={3} placeholder="About your company..." />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 outline-none" rows={3} placeholder="About your company..." />
           </div>
 
           {message && <p className={`text-sm ${message.includes('saved') ? 'text-green-600' : 'text-red-500'}`}>{message}</p>}

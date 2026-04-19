@@ -18,39 +18,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 
 
-@router.post("/evaluate/{interview_id}", response_model=list[EvaluationResponse])
-async def evaluate(
-    interview_id: int,
-    user: User = Depends(require_student),
-    db: Session = Depends(get_db),
-) -> list:
-    profile = get_or_create_profile(db, user)
-    interview = get_interview(db, interview_id, profile.id)
-    evaluations = await evaluate_interview(db, interview)
-    return [EvaluationResponse.model_validate(e) for e in evaluations]
-
-
-@router.get("/{interview_id}", response_model=list[EvaluationResponse])
-async def get_results(
-    interview_id: int,
-    user: User = Depends(require_student),
-    db: Session = Depends(get_db),
-) -> list:
-    profile = get_or_create_profile(db, user)
-    get_interview(db, interview_id, profile.id)  # Verify ownership
-    evals = get_evaluations(db, interview_id)
-    return [EvaluationResponse.model_validate(e) for e in evals]
-
-
-@router.get("/{interview_id}/scorecard", response_model=ScorecardResponse)
-async def scorecard(
-    interview_id: int,
-    user: User = Depends(require_student),
-    db: Session = Depends(get_db),
-) -> dict:
-    profile = get_or_create_profile(db, user)
-    interview = get_interview(db, interview_id, profile.id)
-    return get_scorecard(db, interview)
+# IMPORTANT: Static routes MUST come before /{interview_id} dynamic routes
+# Otherwise FastAPI tries to parse "aggregate" as an int → 422
 
 
 @router.get("/aggregate/scorecard")
@@ -87,6 +56,10 @@ async def aggregate_scorecard(
             "total_score": interview.total_score,
             "questions_count": n,
             "date": str(interview.completed_at or interview.created_at),
+            "duration_seconds": interview.duration_seconds,
+            "target_role": interview.target_role,
+            "target_industry": interview.target_industry,
+            "overall_summary": interview.overall_summary,
             "communication": sum(e.communication_score for e in evals) / n if n else 0,
             "technical": sum(e.technical_score for e in evals) / n if n else 0,
             "confidence": sum(e.confidence_score for e in evals) / n if n else 0,
@@ -107,3 +80,73 @@ async def aggregate_scorecard(
     }
 
     return {"interviews": scorecards, "totals": totals}
+
+
+@router.post("/evaluate/{interview_id}", response_model=list[EvaluationResponse])
+async def evaluate(
+    interview_id: int,
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> list:
+    profile = get_or_create_profile(db, user)
+    interview = get_interview(db, interview_id, profile.id)
+    evaluations = await evaluate_interview(db, interview)
+    return [EvaluationResponse.model_validate(e) for e in evaluations]
+
+
+@router.get("/{interview_id}", response_model=list[EvaluationResponse])
+async def get_results(
+    interview_id: int,
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> list:
+    profile = get_or_create_profile(db, user)
+    get_interview(db, interview_id, profile.id)  # Verify ownership
+    evals = get_evaluations(db, interview_id)
+    return [EvaluationResponse.model_validate(e) for e in evals]
+
+
+@router.get("/{interview_id}/feedback")
+async def detailed_feedback(
+    interview_id: int,
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> list:
+    """Get detailed Q&A feedback: question text, answer text, response time, and evaluation."""
+    from app.models.interview_answer import InterviewAnswer
+    from app.models.interview_question import InterviewQuestion
+
+    profile = get_or_create_profile(db, user)
+    interview = get_interview(db, interview_id, profile.id)
+
+    answers = (
+        db.query(InterviewAnswer)
+        .filter(InterviewAnswer.interview_id == interview.id)
+        .order_by(InterviewAnswer.submitted_at)
+        .all()
+    )
+
+    result = []
+    for ans in answers:
+        question = db.query(InterviewQuestion).filter(InterviewQuestion.id == ans.question_id).first()
+        evaluation = db.query(AnswerEvaluation).filter(AnswerEvaluation.answer_id == ans.id).first()
+        result.append({
+            "question_text": question.question_text if question else "",
+            "question_topics": question.expected_topics if question else [],
+            "answer_text": ans.answer_text,
+            "word_count": ans.word_count,
+            "response_time_seconds": ans.response_time_seconds,
+            "evaluation": EvaluationResponse.model_validate(evaluation) if evaluation else None,
+        })
+    return result
+
+
+@router.get("/{interview_id}/scorecard", response_model=ScorecardResponse)
+async def scorecard(
+    interview_id: int,
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict:
+    profile = get_or_create_profile(db, user)
+    interview = get_interview(db, interview_id, profile.id)
+    return get_scorecard(db, interview)

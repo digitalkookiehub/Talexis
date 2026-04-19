@@ -26,6 +26,19 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE_MB: int = 10
 
+    # Dodo Payments
+    DODO_PAYMENTS_API_KEY: str = ""
+    DODO_PAYMENTS_ENV: str = "test_mode"  # test_mode or live_mode
+    DODO_WEBHOOK_SECRET: str = ""
+
+    # Email (SMTP) for notifications
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@talexis.com"
+    ADMIN_EMAIL: str = ""
+
     class Config:
         env_file = ".env"
 

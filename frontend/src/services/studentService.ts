@@ -32,6 +32,14 @@ export const studentService = {
   updateProfile: (data: Partial<StudentProfile>) =>
     api.put<StudentProfile>('/students/profile', data).then((r) => r.data),
 
+  uploadProfilePicture: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post<{ message: string; path: string }>('/students/profile/picture', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data);
+  },
+
   uploadResume: (file: File) => {
     const form = new FormData();
     form.append('file', file);
@@ -54,5 +62,10 @@ export const studentService = {
   getDashboard: () =>
     api.get<{ profile_complete: boolean; resume_uploaded: boolean; total_interviews: number; baseline_score: number | null }>(
       '/students/dashboard'
+    ).then((r) => r.data),
+
+  getInterviewSuggestions: () =>
+    api.get<{ roles: string[]; industries: string[]; has_profile_data: boolean }>(
+      '/students/interview-suggestions'
     ).then((r) => r.data),
 };

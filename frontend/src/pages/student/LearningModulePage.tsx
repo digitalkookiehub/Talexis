@@ -5,6 +5,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import api from '../../services/api';
 import { ArrowLeft, BookOpen, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import Markdown from 'react-markdown';
 
 interface ModuleDetail {
   id: number;
@@ -44,7 +45,7 @@ export function LearningModulePage() {
   };
 
   if (loading) {
-    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></PageWrapper>;
+    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></PageWrapper>;
   }
 
   if (!mod) {
@@ -53,7 +54,7 @@ export function LearningModulePage() {
 
   return (
     <PageWrapper className="p-0 max-w-3xl">
-      <Link to="/student/learn" className="flex items-center gap-1 text-purple-600 text-sm mb-4 hover:underline">
+      <Link to="/student/learn" className="flex items-center gap-1 text-emerald-600 text-sm mb-4 hover:underline">
         <ArrowLeft size={14} /> Back to Learning Hub
       </Link>
 
@@ -72,8 +73,8 @@ export function LearningModulePage() {
       </div>
 
       <GlassCard className="bg-white border-gray-100 mb-6">
-        <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
-          {mod.content_text}
+        <div className="prose prose-sm max-w-none text-gray-700">
+          <Markdown>{mod.content_text}</Markdown>
         </div>
       </GlassCard>
 
@@ -89,7 +90,7 @@ export function LearningModulePage() {
         <GlassCard className="bg-green-50 border-green-200 text-center py-6">
           <CheckCircle className="text-green-500 mx-auto mb-2" size={32} />
           <p className="font-semibold text-green-700">Module Completed!</p>
-          <Link to="/student/learn" className="text-purple-600 text-sm hover:underline mt-2 inline-block">
+          <Link to="/student/learn" className="text-emerald-600 text-sm hover:underline mt-2 inline-block">
             Continue Learning
           </Link>
         </GlassCard>

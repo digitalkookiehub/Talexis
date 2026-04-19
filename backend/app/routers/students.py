@@ -52,6 +52,47 @@ async def update_student_profile(
     return StudentProfileResponse.model_validate(updated)
 
 
+@router.post("/profile/picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Upload a profile picture (JPEG/PNG, max 5 MB)."""
+    import os
+    import uuid
+    from app.config import settings
+
+    profile = get_or_create_profile(db, user)
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="File too large (max 5 MB)")
+
+    ext = os.path.splitext(file.filename or "photo.png")[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, and WebP are allowed")
+
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    # Delete old picture
+    if profile.profile_picture_url and os.path.exists(profile.profile_picture_url):
+        try:
+            os.remove(profile.profile_picture_url)
+        except OSError:
+            pass
+
+    saved_name = f"avatar_{uuid.uuid4()}{ext}"
+    filepath = os.path.join(settings.UPLOAD_DIR, saved_name)
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    profile.profile_picture_url = filepath
+    db.commit()
+    db.refresh(profile)
+    return {"message": "Profile picture uploaded", "path": filepath}
+
+
 @router.post("/resume/upload")
 async def upload_resume(
     file: UploadFile = File(...),
@@ -117,3 +158,14 @@ async def student_dashboard(
         "total_interviews": interview_count,
         "baseline_score": profile.baseline_score,
     }
+
+
+@router.get("/interview-suggestions")
+async def get_interview_suggestions(
+    user: User = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Derive target role and industry suggestions from the student's profile and resume."""
+    from app.services.student_service import build_interview_suggestions
+    profile = get_or_create_profile(db, user)
+    return build_interview_suggestions(profile)

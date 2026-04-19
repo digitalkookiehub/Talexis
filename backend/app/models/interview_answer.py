@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -15,6 +15,10 @@ class InterviewAnswer(Base):
     audio_url = Column(String(500), nullable=True)
     transcribed_text = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Enrichment fields
+    word_count = Column(Integer, nullable=True)
+    response_time_seconds = Column(Float, nullable=True)
 
     question = relationship("InterviewQuestion", back_populates="answers")
     interview = relationship("Interview", back_populates="answers")

@@ -32,12 +32,10 @@ def test_text_similarity_empty():
 
 def test_short_answer_pattern_detection(db: Session, student_user):
     """Test that very short answers get flagged."""
-    # Create student profile
     profile = StudentProfile(user_id=student_user.id)
     db.add(profile)
     db.flush()
 
-    # Create interview
     interview = Interview(
         student_id=profile.id,
         interview_type=InterviewType.hr,
@@ -47,7 +45,6 @@ def test_short_answer_pattern_detection(db: Session, student_user):
     db.add(interview)
     db.flush()
 
-    # Add 4 very short answers
     for i in range(4):
         q = InterviewQuestion(
             interview_id=interview.id, question_text=f"Question {i}",
@@ -57,7 +54,7 @@ def test_short_answer_pattern_detection(db: Session, student_user):
         db.flush()
         a = InterviewAnswer(
             question_id=q.id, interview_id=interview.id,
-            answer_text="yes",  # Very short
+            answer_text="yes",
             submitted_at=datetime.now(timezone.utc),
         )
         db.add(a)
@@ -69,23 +66,52 @@ def test_short_answer_pattern_detection(db: Session, student_user):
     assert "short_answers" in flag_types
 
 
-def test_attempt_limit(client, student_token):
-    """Test that attempt limiting works."""
+def test_basic_unlimited_attempts(client, student_token):
+    """Basic difficulty should allow unlimited attempts."""
     from tests.conftest import auth_headers
 
-    # Start multiple interviews of same type
-    for i in range(5):
+    # Start 7 basic HR interviews — should all succeed
+    for i in range(7):
         response = client.post(
             "/api/v1/interviews/start",
             headers=auth_headers(student_token),
             json={"interview_type": "hr", "difficulty_level": "basic"},
         )
-        assert response.status_code == 201
+        assert response.status_code == 201, f"Attempt {i+1} failed: {response.text}"
 
-    # 6th attempt should fail
+
+def test_advanced_attempt_limit(client, student_token, db):
+    """Advanced difficulty should limit to 5 attempts per type."""
+    from tests.conftest import auth_headers
+
+    # Need to unlock advanced first — create evaluated interviews with good scores
+    profile = StudentProfile(user_id=1)
+    db.add(profile)
+    db.flush()
+
+    # Create a basic evaluated interview with score >= 5
+    for diff, score in [("basic", 6.0), ("intermediate", 7.0)]:
+        iv = Interview(
+            student_id=profile.id, interview_type=InterviewType.technical,
+            difficulty_level=DifficultyLevel(diff), status=InterviewStatus.evaluated,
+            total_score=score, started_at=datetime.now(timezone.utc),
+        )
+        db.add(iv)
+    db.commit()
+
+    # Now try advanced — should work up to 5 times
+    for i in range(5):
+        response = client.post(
+            "/api/v1/interviews/start",
+            headers=auth_headers(student_token),
+            json={"interview_type": "technical", "difficulty_level": "advanced"},
+        )
+        assert response.status_code == 201, f"Advanced attempt {i+1} failed: {response.text}"
+
+    # 6th should fail
     response = client.post(
         "/api/v1/interviews/start",
         headers=auth_headers(student_token),
-        json={"interview_type": "hr", "difficulty_level": "basic"},
+        json={"interview_type": "technical", "difficulty_level": "advanced"},
     )
-    assert response.status_code == 422  # ValidationError
+    assert response.status_code == 422

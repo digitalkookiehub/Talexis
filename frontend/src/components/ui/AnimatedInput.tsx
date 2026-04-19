@@ -18,7 +18,7 @@ export const AnimatedInput = forwardRef<HTMLInputElement, AnimatedInputProps>(
           ref={ref}
           className={cn(
             'w-full px-4 py-3 rounded-xl border-2 transition-colors duration-200 outline-none',
-            error ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-purple-500',
+            error ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-emerald-500',
             className
           )}
           {...props}

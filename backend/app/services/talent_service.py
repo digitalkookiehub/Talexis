@@ -70,12 +70,14 @@ def list_visible_talents(
     db: Session, skip: int = 0, limit: int = 20,
     min_score: float | None = None,
 ) -> tuple[list[TalentProfile], int]:
-    query = db.query(TalentProfile).filter(
+    from sqlalchemy.orm import joinedload
+    query = db.query(TalentProfile).options(
+        joinedload(TalentProfile.student)
+    ).filter(
         TalentProfile.is_visible == True,
         TalentProfile.consent_given == True,
     )
     if min_score is not None:
-        # Filter by readiness through the linked student
         pass  # Simplified for MVP
     total = query.count()
     talents = query.offset(skip).limit(limit).all()

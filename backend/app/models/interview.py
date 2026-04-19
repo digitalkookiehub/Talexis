@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, Float, DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -20,6 +20,14 @@ class Interview(Base, TimestampMixin):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     total_score = Column(Float, nullable=True)
     target_questions = Column(Integer, nullable=False, default=5)
+
+    # Enrichment fields
+    duration_seconds = Column(Integer, nullable=True)
+    target_role = Column(String(200), nullable=True)
+    target_industry = Column(String(200), nullable=True)
+    overall_summary = Column(Text, nullable=True)
+    overall_feedback = Column(Text, nullable=True)
+    questions_answered = Column(Integer, nullable=True, default=0)
 
     student = relationship("StudentProfile", back_populates="interviews")
     questions = relationship("InterviewQuestion", back_populates="interview", cascade="all, delete-orphan")

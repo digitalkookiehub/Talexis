@@ -22,6 +22,15 @@ class StudentProfile(Base, TimestampMixin):
     parsed_resume = Column(JSON, nullable=True)
     baseline_score = Column(Float, nullable=True)
 
+    # Experience & portfolio (for experienced/external candidates)
+    experience_level = Column(String(50), nullable=True)  # fresher, junior, mid, senior
+    years_of_experience = Column(Integer, nullable=True)
+    linkedin_url = Column(String(500), nullable=True)
+    github_url = Column(String(500), nullable=True)
+    portfolio_url = Column(String(500), nullable=True)
+    preferred_roles = Column(JSON, default=list)
+    preferred_locations = Column(JSON, default=list)
+
     # Relationships
     user = relationship("User", back_populates="student_profile")
     interviews = relationship("Interview", back_populates="student", cascade="all, delete-orphan")

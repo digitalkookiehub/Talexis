@@ -1,6 +1,7 @@
 """Seed script to populate the database with demo data for testing."""
 import logging
 import sys
+import uuid
 from datetime import datetime, timezone
 
 from app.database import SessionLocal
@@ -52,7 +53,7 @@ def seed():
             # Create talent profile with consent
             talent = TalentProfile(
                 student_id=profile.id,
-                candidate_code=f"TAL-{email.split('@')[0].upper()[:6]}",
+                candidate_code=f"TAL-{uuid.uuid4().hex[:8].upper()}",
                 is_visible=True, consent_given=True,
                 consent_date=datetime.now(timezone.utc),
                 skill_scores={"communication": score * 0.1, "technical": score * 0.11, "confidence": score * 0.09, "structure": score * 0.1},

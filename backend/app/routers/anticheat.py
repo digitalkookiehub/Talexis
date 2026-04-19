@@ -79,3 +79,59 @@ async def report(
 ) -> dict:
     """Admin: platform-wide anti-cheat report."""
     return get_anticheat_report(db)
+
+
+@router.get("/report/flagged")
+async def flagged_interviews(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> list:
+    """Admin: list all flagged interviews with student and flag details."""
+    from app.models.anticheat import AntiCheatLog
+    from app.models.interview import Interview
+    from app.models.student import StudentProfile
+    from app.models.user import User as UserModel
+
+    flags = (
+        db.query(AntiCheatLog)
+        .order_by(AntiCheatLog.flagged_at.desc())
+        .limit(100)
+        .all()
+    )
+
+    results = []
+    seen_interviews: dict[int, dict] = {}
+
+    for flag in flags:
+        interview_id = flag.interview_id
+        if interview_id not in seen_interviews:
+            interview = db.query(Interview).filter(Interview.id == interview_id).first()
+            student_name = None
+            student_email = None
+            if interview:
+                student = db.query(StudentProfile).filter(StudentProfile.id == interview.student_id).first()
+                if student:
+                    user_record = db.query(UserModel).filter(UserModel.id == student.user_id).first()
+                    if user_record:
+                        student_name = user_record.full_name
+                        student_email = user_record.email
+
+            seen_interviews[interview_id] = {
+                "interview_id": interview_id,
+                "interview_type": interview.interview_type.value if interview else "unknown",
+                "student_name": student_name,
+                "student_email": student_email,
+                "total_score": interview.total_score if interview else None,
+                "date": str(interview.completed_at or interview.created_at) if interview else None,
+                "flags": [],
+            }
+
+        seen_interviews[interview_id]["flags"].append({
+            "id": flag.id,
+            "type": flag.flag_type.value,
+            "severity": flag.severity.value,
+            "details": flag.details,
+            "flagged_at": str(flag.flagged_at),
+        })
+
+    return list(seen_interviews.values())

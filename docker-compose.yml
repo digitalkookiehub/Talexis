@@ -1,56 +1,64 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
+    restart: always
     environment:
       POSTGRES_USER: ${DB_USER:-talexis_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-talexis_secret}
       POSTGRES_DB: ${DB_NAME:-talexis}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U talexis_user -d talexis"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-talexis_user} -d ${DB_NAME:-talexis}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:11434/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
   backend:
     build: ./backend
+    restart: always
     environment:
       DATABASE_URL: postgresql://${DB_USER:-talexis_user}:${DB_PASSWORD:-talexis_secret}@db:5432/${DB_NAME:-talexis}
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      OLLAMA_BASE_URL: http://ollama:11434
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["http://localhost"]}
+      UPLOAD_DIR: /app/uploads
+      MAX_FILE_SIZE_MB: 10
+      DODO_PAYMENTS_API_KEY: ${DODO_PAYMENTS_API_KEY:-}
+      DODO_PAYMENTS_ENV: ${DODO_PAYMENTS_ENV:-test_mode}
+      DODO_WEBHOOK_SECRET: ${DODO_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@talexis.com}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    restart: always
     ports:
-      - "3000:80"
+      - "${APP_PORT:-80}:80"
     depends_on:
       - backend
 
 volumes:
   postgres_data:
-  ollama_data:
+  uploads_data:

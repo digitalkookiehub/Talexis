@@ -35,7 +35,7 @@ export function LoginPage() {
       <GlassCard className="w-full max-w-md bg-white/80 backdrop-blur-xl">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
-            <GraduationCap className="text-purple-600" size={40} />
+            <GraduationCap className="text-emerald-600" size={40} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome to Talexis</h1>
           <p className="text-gray-500 mt-1">Sign in to your account</p>
@@ -63,15 +63,20 @@ export function LoginPage() {
             <p className="text-red-500 text-sm text-center">{error}</p>
           )}
 
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-sm text-emerald-600 hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
+
           <GradientButton type="submit" className="w-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </GradientButton>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="text-purple-600 hover:underline font-medium">
-            Sign Up
+          <Link to="/" className="text-emerald-600 hover:underline font-medium">
+            Back to portals
           </Link>
         </p>
       </GlassCard>

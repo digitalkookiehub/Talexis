@@ -13,26 +13,53 @@ interface StudentAnalytics {
   interviews_by_type: Record<string, number>;
 }
 
+interface AggregateInterview {
+  interview_id: number;
+  type: string;
+  difficulty: string;
+  total_score: number | null;
+  questions_count: number;
+  date: string;
+}
+
+interface AggregateScorecard {
+  interviews: AggregateInterview[];
+  totals: { avg_score: number } | null;
+}
+
 const typeColors: Record<string, string> = {
   hr: 'from-blue-400 to-blue-600',
-  technical: 'from-purple-400 to-purple-600',
+  technical: 'from-emerald-400 to-emerald-600',
   behavioral: 'from-green-400 to-green-600',
   sales: 'from-orange-400 to-orange-600',
 };
 
+const typeDotColors: Record<string, string> = {
+  hr: 'bg-blue-500',
+  technical: 'bg-emerald-500',
+  behavioral: 'bg-green-500',
+  sales: 'bg-orange-500',
+};
+
 export function StudentAnalyticsPage() {
   const [analytics, setAnalytics] = useState<StudentAnalytics | null>(null);
+  const [trendData, setTrendData] = useState<AggregateInterview[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<StudentAnalytics>('/analytics/student')
-      .then((r) => setAnalytics(r.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<StudentAnalytics>('/analytics/student').then((r) => r.data),
+      api.get<AggregateScorecard>('/evaluations/aggregate/scorecard').then((r) => r.data).catch(() => null),
+    ]).then(([stats, agg]) => {
+      setAnalytics(stats);
+      if (agg?.interviews) {
+        setTrendData([...agg.interviews].reverse()); // chronological order
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
-    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></PageWrapper>;
+    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></PageWrapper>;
   }
 
   if (!analytics) {
@@ -40,6 +67,7 @@ export function StudentAnalyticsPage() {
   }
 
   const maxType = Object.values(analytics.interviews_by_type).reduce((a, b) => Math.max(a, b), 1);
+  const maxTrendScore = Math.max(...trendData.map((d) => d.total_score ?? 0), 10);
 
   return (
     <PageWrapper className="p-0">
@@ -54,7 +82,7 @@ export function StudentAnalyticsPage() {
       {/* Key metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Interviews', value: analytics.total_interviews, icon: <Brain className="text-purple-500" size={20} />, color: 'bg-purple-50' },
+          { label: 'Total Interviews', value: analytics.total_interviews, icon: <Brain className="text-emerald-500" size={20} />, color: 'bg-emerald-50' },
           { label: 'Evaluated', value: analytics.evaluated_interviews, icon: <Target className="text-blue-500" size={20} />, color: 'bg-blue-50' },
           { label: 'Average Score', value: `${analytics.average_score}/10`, icon: <BarChart3 className="text-green-500" size={20} />, color: 'bg-green-50' },
           { label: 'Highest Score', value: `${analytics.highest_score}/10`, icon: <TrendingUp className="text-orange-500" size={20} />, color: 'bg-orange-50' },
@@ -72,6 +100,50 @@ export function StudentAnalyticsPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Score Trend Chart */}
+      {trendData.length > 0 && (
+        <GlassCard className="bg-white border-gray-100 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Score Trend</h2>
+          <div className="flex items-end gap-1.5 h-40">
+            {trendData.map((d, i) => {
+              const score = d.total_score ?? 0;
+              const heightPct = (score / maxTrendScore) * 100;
+              const dotColor = typeDotColors[d.type] ?? 'bg-gray-400';
+              return (
+                <div key={d.interview_id} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
+                  <motion.div
+                    className={`w-full rounded-t-md bg-gradient-to-t ${typeColors[d.type] ?? 'from-gray-400 to-gray-600'} min-h-[4px]`}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${heightPct}%` }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                  />
+                  <span className="text-[9px] text-gray-400 truncate w-full text-center">
+                    {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                      <span className="capitalize">{d.type}</span>
+                    </div>
+                    <span>Score: {score.toFixed(1)}/10</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Legend */}
+          <div className="flex gap-4 mt-3 justify-center">
+            {Object.entries(typeDotColors).map(([type, color]) => (
+              <div key={type} className="flex items-center gap-1 text-[10px] text-gray-500">
+                <span className={`w-2 h-2 rounded-full ${color}`} />
+                <span className="capitalize">{type}</span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      )}
 
       {/* Interviews by type chart */}
       <GlassCard className="bg-white border-gray-100 mb-6">
@@ -101,28 +173,24 @@ export function StudentAnalyticsPage() {
       </GlassCard>
 
       {/* Score gauge */}
-      <GlassCard className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200 text-center">
-        <p className="text-sm text-indigo-600 font-medium mb-2">Overall Performance</p>
+      <GlassCard className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 text-center">
+        <p className="text-sm text-emerald-600 font-medium mb-2">Overall Performance</p>
         <div className="relative w-32 h-32 mx-auto mb-3">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="3"
+              fill="none" stroke="#e5e7eb" strokeWidth="3"
             />
             <motion.path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="url(#gradient)"
-              strokeWidth="3"
+              fill="none" stroke="url(#gradient)" strokeWidth="3"
               strokeDasharray={`${(analytics.average_score / 10) * 100}, 100`}
               initial={{ strokeDasharray: "0, 100" }}
               animate={{ strokeDasharray: `${(analytics.average_score / 10) * 100}, 100` }}
               transition={{ duration: 1.5 }}
             />
             <defs>
-              <linearGradient id="gradient"><stop offset="0%" stopColor="#8b5cf6" /><stop offset="100%" stopColor="#ec4899" /></linearGradient>
+              <linearGradient id="gradient"><stop offset="0%" stopColor="#10b981" /><stop offset="100%" stopColor="#14b8a6" /></linearGradient>
             </defs>
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">

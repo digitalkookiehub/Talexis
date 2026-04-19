@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.exceptions import AppException
@@ -23,6 +24,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Serve uploaded files (profile pictures, resumes) as static files
+import os
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
 @app.exception_handler(AppException)
@@ -62,3 +69,6 @@ _include_router("app.routers.learning", "/api/v1", ["learning"])
 _include_router("app.routers.admin", "/api/v1", ["admin"])
 _include_router("app.routers.analytics", "/api/v1", ["analytics"])
 _include_router("app.routers.anticheat", "/api/v1", ["anticheat"])
+_include_router("app.routers.college", "/api/v1", ["college"])
+_include_router("app.routers.schedules", "/api/v1", ["schedules"])
+_include_router("app.routers.payments", "/api/v1", ["payments"])

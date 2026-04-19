@@ -45,13 +45,81 @@ def _extract_pdf(filepath: str) -> str:
         return f"PDF extraction error: {str(e)}"
 
 
-def _extract_docx(filepath: str) -> str:
-    """Extract text from DOCX using python-docx."""
+def _extract_docx_full(doc_source: object) -> str:
+    """Extract ALL text from a DOCX document — paragraphs, tables, headers, footers, and text boxes.
+
+    Many resumes use table-based layouts where all content is inside table cells,
+    not in top-level paragraphs. This function handles that.
+    """
+    from docx import Document
+    from docx.oxml.ns import qn
+
+    if isinstance(doc_source, (str, bytes, os.PathLike)):
+        doc = Document(doc_source)
+    else:
+        doc = Document(doc_source)
+
+    text_parts: list[str] = []
+
+    # 1. Top-level paragraphs
+    for p in doc.paragraphs:
+        t = p.text.strip()
+        if t:
+            text_parts.append(t)
+
+    # 2. Tables — iterate all rows/cells (resumes often use tables for layout)
+    for table in doc.tables:
+        for row in table.rows:
+            row_texts: list[str] = []
+            for cell in row.cells:
+                cell_text = cell.text.strip()
+                if cell_text:
+                    row_texts.append(cell_text)
+            if row_texts:
+                text_parts.append("\n".join(row_texts))
+
+    # 3. Headers and footers (some resumes put name/contact in header)
+    for section in doc.sections:
+        for header in [section.header, section.first_page_header]:
+            if header and header.is_linked_to_previous is False:
+                for p in header.paragraphs:
+                    t = p.text.strip()
+                    if t:
+                        text_parts.append(t)
+        for footer in [section.footer, section.first_page_footer]:
+            if footer and footer.is_linked_to_previous is False:
+                for p in footer.paragraphs:
+                    t = p.text.strip()
+                    if t:
+                        text_parts.append(t)
+
+    # 4. Text boxes (floating content in shapes/text frames)
     try:
-        from docx import Document
-        doc = Document(filepath)
-        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-        return "\n".join(paragraphs)
+        body = doc.element.body
+        for txbx in body.iter(qn("w:txbxContent")):
+            for p in txbx.iter(qn("w:p")):
+                runs = p.findall(qn("w:r"))
+                p_text = "".join(
+                    r.find(qn("w:t")).text or ""
+                    for r in runs
+                    if r.find(qn("w:t")) is not None
+                )
+                if p_text.strip():
+                    text_parts.append(p_text.strip())
+    except Exception as e:
+        logger.debug("Text box extraction skipped: %s", str(e))
+
+    return "\n".join(text_parts)
+
+
+def _extract_docx(filepath: str) -> str:
+    """Extract text from DOCX using python-docx — handles tables, text boxes, headers."""
+    try:
+        text = _extract_docx_full(filepath)
+        if text.strip():
+            return text
+        logger.warning("DOCX extraction returned empty text for %s", filepath)
+        return ""
     except ImportError:
         logger.error("python-docx not installed")
         return "DOCX parsing not available."
@@ -90,9 +158,8 @@ def extract_text_from_bytes(content: bytes, filename: str) -> str:
 
     if ext in (".docx", ".doc"):
         try:
-            from docx import Document
-            doc = Document(BytesIO(content))
-            return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+            text = _extract_docx_full(BytesIO(content))
+            return text
         except Exception as e:
             logger.error("DOCX byte extraction failed: %s", str(e))
             return ""

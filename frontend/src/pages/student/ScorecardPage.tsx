@@ -57,7 +57,7 @@ function ScoreBar({ label, score, color, delay }: { label: string; score: number
 
 const typeIcons: Record<string, string> = {
   hr: 'bg-blue-100 text-blue-600',
-  technical: 'bg-purple-100 text-purple-600',
+  technical: 'bg-emerald-100 text-emerald-600',
   behavioral: 'bg-green-100 text-green-600',
   sales: 'bg-orange-100 text-orange-600',
 };
@@ -74,7 +74,7 @@ export function ScorecardPage() {
   }, []);
 
   if (loading) {
-    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></PageWrapper>;
+    return <PageWrapper className="flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></PageWrapper>;
   }
 
   const totals = data?.totals;
@@ -95,7 +95,7 @@ export function ScorecardPage() {
           <Award className="text-gray-300 mx-auto mb-3" size={48} />
           <p className="text-gray-500 mb-2">No evaluated interviews yet.</p>
           <p className="text-gray-400 text-sm">Complete interviews and evaluate them to see your aggregate scorecard.</p>
-          <Link to="/student/interviews" className="text-purple-600 text-sm hover:underline mt-3 inline-block">
+          <Link to="/student/interviews" className="text-emerald-600 text-sm hover:underline mt-3 inline-block">
             Start an Interview
           </Link>
         </GlassCard>
@@ -103,9 +103,9 @@ export function ScorecardPage() {
         <div className="space-y-6">
           {/* Overall stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <GlassCard className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 text-center">
+            <GlassCard className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 text-center">
               <p className="text-4xl font-bold text-gray-900">{totals.avg_score.toFixed(1)}</p>
-              <p className="text-xs text-purple-600 font-medium mt-1">Average Score</p>
+              <p className="text-xs text-emerald-600 font-medium mt-1">Average Score</p>
             </GlassCard>
             <GlassCard className="bg-white border-gray-100 text-center">
               <p className="text-3xl font-bold text-gray-900">{totals.total_interviews}</p>
@@ -126,7 +126,7 @@ export function ScorecardPage() {
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Skill Dimensions (Aggregate)</h2>
             <div className="space-y-4">
               <ScoreBar label="Communication" score={totals.avg_communication} color="bg-blue-500" delay={0} />
-              <ScoreBar label="Technical Accuracy" score={totals.avg_technical} color="bg-purple-500" delay={0.1} />
+              <ScoreBar label="Technical Accuracy" score={totals.avg_technical} color="bg-emerald-500" delay={0.1} />
               <ScoreBar label="Confidence" score={totals.avg_confidence} color="bg-green-500" delay={0.2} />
               <ScoreBar label="Answer Structure" score={totals.avg_structure} color="bg-orange-500" delay={0.3} />
             </div>
@@ -189,7 +189,7 @@ export function ScorecardPage() {
                   >
                     <span className="text-xs font-medium text-gray-600">{(interview.total_score ?? 0).toFixed(1)}</span>
                     <div
-                      className="w-full bg-gradient-to-t from-purple-500 to-pink-400 rounded-t min-h-[4px]"
+                      className="w-full bg-gradient-to-t from-emerald-500 to-teal-400 rounded-t min-h-[4px]"
                       style={{ height: `${((interview.total_score ?? 0) / 10) * 80}px` }}
                     />
                     <span className="text-[10px] text-gray-400 capitalize">{interview.type.slice(0, 4)}</span>

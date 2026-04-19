@@ -10,6 +10,14 @@ export const companyService = {
   updateProfile: (data: Partial<Company>) =>
     api.put<Company>('/companies/profile', data).then((r) => r.data),
 
+  uploadLogo: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post<{ message: string; path: string }>('/companies/profile/logo', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data);
+  },
+
   createJob: (data: Partial<JobRole>) =>
     api.post<JobRole>('/jobs', data).then((r) => r.data),
 

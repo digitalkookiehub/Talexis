@@ -16,10 +16,17 @@ export function ResumePage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    studentService.getParsedResume().then((data) => {
-      if (data.parsed_resume) {
-        setParsedData(data.parsed_resume);
+    studentService.getProfile().then((profile) => {
+      if (profile.resume_url) {
         setResumeUploaded(true);
+      }
+      if (profile.parsed_resume) {
+        const resume = profile.parsed_resume as Record<string, unknown>;
+        setParsedData(resume);
+        // Restore screening result if it was previously saved
+        if (resume._screening && typeof resume._screening === 'object') {
+          setScreening(resume._screening as ResumeScreening);
+        }
       }
     }).catch(() => {});
   }, []);
@@ -89,9 +96,9 @@ export function ResumePage() {
         <GlassCard className="bg-white border-gray-100">
           <h2 className="text-lg font-semibold mb-4">Upload Resume</h2>
 
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-purple-400 transition-colors">
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-emerald-400 transition-colors">
             {uploading ? (
-              <Loader2 className="animate-spin text-purple-500 mb-2" size={32} />
+              <Loader2 className="animate-spin text-emerald-500 mb-2" size={32} />
             ) : resumeUploaded ? (
               <CheckCircle className="text-green-500 mb-2" size={32} />
             ) : (
@@ -103,25 +110,28 @@ export function ResumePage() {
             <input type="file" accept=".pdf,.txt,.doc,.docx" className="hidden" onChange={(e) => void handleUpload(e)} />
           </label>
 
-          {resumeUploaded && (
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <GradientButton onClick={() => void handleParse()} disabled={parsing}>
-                {parsing ? (
-                  <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={16} /> Parsing...</span>
-                ) : (
-                  <span className="flex items-center gap-2"><Brain size={16} /> Parse with AI</span>
-                )}
-              </GradientButton>
-              {parsedData && !parsedData.error ? (
-                <GradientButton variant="secondary" onClick={() => void handleScreen()} disabled={screeningLoading}>
-                  {screeningLoading ? (
-                    <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={16} /> Screening...</span>
-                  ) : (
-                    <span className="flex items-center gap-2"><Sparkles size={16} /> Screen & Score</span>
-                  )}
-                </GradientButton>
-              ) : null}
-            </div>
+          <div className="mt-4 flex gap-2 flex-wrap">
+            <GradientButton onClick={() => void handleParse()} disabled={!resumeUploaded || parsing}>
+              {parsing ? (
+                <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={16} /> Parsing...</span>
+              ) : (
+                <span className="flex items-center gap-2"><Brain size={16} /> Parse with AI</span>
+              )}
+            </GradientButton>
+            <GradientButton
+              variant="secondary"
+              onClick={() => void handleScreen()}
+              disabled={!parsedData || !!parsedData.error || screeningLoading}
+            >
+              {screeningLoading ? (
+                <span className="flex items-center gap-2"><Loader2 className="animate-spin" size={16} /> Screening...</span>
+              ) : (
+                <span className="flex items-center gap-2"><Sparkles size={16} /> Screen & Score</span>
+              )}
+            </GradientButton>
+          </div>
+          {!resumeUploaded && (
+            <p className="text-xs text-gray-400 mt-2">Upload your resume first to enable parsing</p>
           )}
 
           {message && (
@@ -171,14 +181,14 @@ function ScreeningReport({ screening }: { screening: ResumeScreening }) {
   return (
     <div className="space-y-4">
       {/* Overall score */}
-      <GlassCard className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+      <GlassCard className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-purple-600 font-medium">Resume Score</p>
+            <p className="text-sm text-emerald-600 font-medium">Resume Score</p>
             <p className={`text-5xl font-bold ${scoreColor}`}>{score.toFixed(1)}<span className="text-lg text-gray-400">/10</span></p>
             {screening.summary && <p className="text-sm text-gray-600 mt-2 max-w-2xl">{screening.summary}</p>}
           </div>
-          <Sparkles className="text-purple-400" size={48} />
+          <Sparkles className="text-emerald-400" size={48} />
         </div>
       </GlassCard>
 
@@ -195,7 +205,7 @@ function ScreeningReport({ screening }: { screening: ResumeScreening }) {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3">
                   <motion.div
-                    className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                    className="h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
                     initial={{ width: 0 }}
                     animate={{ width: `${(val / 10) * 100}%` }}
                     transition={{ duration: 0.6, delay: i * 0.1 }}
@@ -244,10 +254,10 @@ function ScreeningReport({ screening }: { screening: ResumeScreening }) {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="p-3 bg-gray-50 rounded-lg border-l-4 border-purple-500"
+                className="p-3 bg-gray-50 rounded-lg border-l-4 border-emerald-500"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-purple-600 capitalize">{sug.section}</span>
+                  <span className="text-xs font-medium text-emerald-600 capitalize">{sug.section}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${priorityColors[sug.priority] ?? ''}`}>
                     {sug.priority} priority
                   </span>
@@ -309,7 +319,7 @@ function ParsedDataView({ data }: { data: Record<string, unknown> }) {
         if (isEmpty(value)) return null;
         return (
           <div key={key} className="border-b border-gray-100 pb-3 last:border-0">
-            <p className="font-semibold text-purple-600 text-xs uppercase tracking-wider mb-2">{formatKey(key)}</p>
+            <p className="font-semibold text-emerald-600 text-xs uppercase tracking-wider mb-2">{formatKey(key)}</p>
             <RenderValue value={value} />
           </div>
         );
@@ -336,7 +346,7 @@ function RenderValue({ value }: { value: unknown }) {
       return (
         <div className="flex flex-wrap gap-1.5">
           {(value as string[]).map((tag, i) => (
-            <span key={i} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs">
+            <span key={i} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs">
               {tag}
             </span>
           ))}

@@ -16,6 +16,12 @@ from app.models import (  # noqa: F401
     LearningModule, StudentLearningProgress,
     AntiCheatLog, AnswerSimilarity,
 )
+from app.models.scheduled_interview import ScheduledInterview  # noqa: F401
+from app.models.college_recommendation import CollegeRecommendation  # noqa: F401
+from app.models.activity_log import ActivityLog  # noqa: F401
+from app.models.demo_request import DemoRequest  # noqa: F401
+from app.models.job_application import JobApplication  # noqa: F401
+from app.models.subscription import UserSubscription  # noqa: F401
 
 config = context.config
 

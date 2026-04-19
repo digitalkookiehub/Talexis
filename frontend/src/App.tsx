@@ -4,8 +4,14 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Auth pages
+import { HomePage } from './pages/auth/HomePage';
 import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { StudentPortalPage } from './pages/auth/StudentPortalPage';
+import { PlacementPortalPage } from './pages/auth/PlacementPortalPage';
+import { CompanyPortalPage } from './pages/auth/CompanyPortalPage';
+import { PricingPage } from './pages/auth/PricingPage';
+import { PaymentSuccessPage } from './pages/auth/PaymentSuccessPage';
 
 // Student pages
 import { StudentDashboardPage } from './pages/student/DashboardPage';
@@ -21,6 +27,7 @@ import { LearningModulePage } from './pages/student/LearningModulePage';
 import { StudentAnalyticsPage } from './pages/student/AnalyticsPage';
 import { SkillsPage } from './pages/student/SkillsPage';
 import { ScorecardPage } from './pages/student/ScorecardPage';
+import { JobBoardPage } from './pages/student/JobBoardPage';
 
 // Company pages
 import { CompanyDashboardPage } from './pages/company/DashboardPage';
@@ -30,6 +37,13 @@ import { TalentDetailPage } from './pages/company/TalentDetailPage';
 import { ShortlistPage } from './pages/company/ShortlistPage';
 import { JobsPage } from './pages/company/JobsPage';
 import { CompanyAnalyticsPage } from './pages/company/AnalyticsPage';
+import { SchedulePage } from './pages/company/SchedulePage';
+
+// College admin pages
+import { CollegeDashboardPage } from './pages/college/DashboardPage';
+import { StudentRosterPage } from './pages/college/StudentRosterPage';
+import { CollegeAnalyticsPage } from './pages/college/CollegeAnalyticsPage';
+import { PlacementPage } from './pages/college/PlacementPage';
 
 // Admin pages
 import { AdminDashboardPage } from './pages/admin/DashboardPage';
@@ -37,12 +51,14 @@ import { UsersPage } from './pages/admin/UsersPage';
 import { AdminAnalyticsPage } from './pages/admin/AnalyticsPage';
 import { AntiCheatPage } from './pages/admin/AntiCheatPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
+import { WorkflowPage } from './pages/admin/WorkflowPage';
+import { UserGuidePage } from './pages/admin/UserGuidePage';
 
 import type { UserRole } from './types';
 
 const dashboardByRole: Record<UserRole, string> = {
   student: '/student/dashboard',
-  college_admin: '/admin',
+  college_admin: '/college',
   company: '/company/dashboard',
   admin: '/admin',
 };
@@ -50,7 +66,7 @@ const dashboardByRole: Record<UserRole, string> = {
 function RootRedirect() {
   const { user, isLoading } = useAuth();
   if (isLoading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <HomePage />;
   return <Navigate to={dashboardByRole[user.role]} replace />;
 }
 
@@ -58,9 +74,14 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
       <Route path="/" element={<RootRedirect />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/student/login" element={<StudentPortalPage />} />
+      <Route path="/placement/login" element={<PlacementPortalPage />} />
+      <Route path="/hire/login" element={<CompanyPortalPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/payment/success" element={<PaymentSuccessPage />} />
 
       {/* Student routes */}
       <Route
@@ -82,6 +103,7 @@ export default function App() {
                 <Route path="readiness" element={<ReadinessPage />} />
                 <Route path="learn" element={<LearningHubPage />} />
                 <Route path="learn/:id" element={<LearningModulePage />} />
+                <Route path="jobs" element={<JobBoardPage />} />
                 <Route path="analytics" element={<StudentAnalyticsPage />} />
               </Routes>
             </AppLayout>
@@ -102,7 +124,25 @@ export default function App() {
                 <Route path="talents/:code" element={<TalentDetailPage />} />
                 <Route path="shortlist" element={<ShortlistPage />} />
                 <Route path="jobs" element={<JobsPage />} />
+                <Route path="schedule" element={<SchedulePage />} />
                 <Route path="analytics" element={<CompanyAnalyticsPage />} />
+              </Routes>
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* College admin routes */}
+      <Route
+        path="/college/*"
+        element={
+          <ProtectedRoute allowedRoles={['college_admin']}>
+            <AppLayout>
+              <Routes>
+                <Route index element={<CollegeDashboardPage />} />
+                <Route path="students" element={<StudentRosterPage />} />
+                <Route path="analytics" element={<CollegeAnalyticsPage />} />
+                <Route path="placements" element={<PlacementPage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>
@@ -113,7 +153,7 @@ export default function App() {
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'college_admin']}>
+          <ProtectedRoute allowedRoles={['admin']}>
             <AppLayout>
               <Routes>
                 <Route index element={<AdminDashboardPage />} />
@@ -121,6 +161,8 @@ export default function App() {
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="anticheat" element={<AntiCheatPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="workflow" element={<WorkflowPage />} />
+                <Route path="guide" element={<UserGuidePage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>

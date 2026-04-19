@@ -44,6 +44,13 @@ export interface StudentProfile {
   resume_url: string | null;
   parsed_resume: Record<string, unknown> | null;
   baseline_score: number | null;
+  experience_level: string | null;
+  years_of_experience: number | null;
+  linkedin_url: string | null;
+  github_url: string | null;
+  portfolio_url: string | null;
+  preferred_roles: string[];
+  preferred_locations: string[];
 }
 
 // Interview types
@@ -61,6 +68,12 @@ export interface Interview {
   completed_at: string | null;
   total_score: number | null;
   target_questions: number;
+  duration_seconds: number | null;
+  target_role: string | null;
+  target_industry: string | null;
+  overall_summary: string | null;
+  overall_feedback: string | null;
+  questions_answered: number | null;
   created_at: string;
 }
 
@@ -71,6 +84,7 @@ export interface InterviewQuestion {
   question_type: string;
   difficulty: string;
   order_index: number;
+  expected_topics: string[];
 }
 
 export interface InterviewAnswer {
@@ -78,6 +92,8 @@ export interface InterviewAnswer {
   question_id: number;
   interview_id: number;
   answer_text: string;
+  word_count: number | null;
+  response_time_seconds: number | null;
   submitted_at: string;
 }
 

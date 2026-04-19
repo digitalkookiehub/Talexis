@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@media print {
+  /* Hide sidebar, header, nav */
+  aside, nav, .print\:hidden { display: none !important; }
+
+  /* Full width for content */
+  main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+
+  /* Remove shadows and borders for cleaner print */
+  .shadow-lg, .shadow-md, .shadow-xl { box-shadow: none !important; }
+
+  /* Page breaks */
+  .break-inside-avoid { break-inside: avoid; }
+
+  /* Smaller text for fitting more */
+  body { font-size: 11px !important; }
+  h1 { font-size: 18px !important; }
+  h2 { font-size: 14px !important; }
+  h3 { font-size: 12px !important; }
+
+  /* White background */
+  body, main, div { background: white !important; }
+
+  /* Print margins */
+  @page { margin: 1cm; }
+}

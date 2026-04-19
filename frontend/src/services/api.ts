@@ -8,7 +8,9 @@ api.interceptors.request.use((config) => {
   // Don't attach token for auth endpoints (login, register, refresh)
   const isAuthEndpoint = config.url?.startsWith('/auth/login') ||
     config.url?.startsWith('/auth/register') ||
-    config.url?.startsWith('/auth/refresh');
+    config.url?.startsWith('/auth/refresh') ||
+    config.url?.startsWith('/auth/forgot-password') ||
+    config.url?.startsWith('/auth/demo-request');
 
   if (!isAuthEndpoint) {
     const token = localStorage.getItem('access_token');

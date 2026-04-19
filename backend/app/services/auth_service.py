@@ -99,6 +99,19 @@ def revoke_refresh_token(db: Session, refresh_token: str) -> None:
         db.commit()
 
 
+def reset_password(db: Session, email: str, new_password: str) -> User:
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise NotFoundError("No account found with this email")
+    if len(new_password) < 6:
+        raise UnauthorizedError("Password must be at least 6 characters")
+    user.hashed_password = hash_password(new_password)
+    db.commit()
+    db.refresh(user)
+    logger.info("Password reset for user: %s", email)
+    return user
+
+
 def update_user(db: Session, user: User, full_name: str | None, email: str | None) -> User:
     if email and email != user.email:
         existing = db.query(User).filter(User.email == email).first()

@@ -9,6 +9,20 @@ from app.auth.jwt import hash_password
 from app.models.user import User
 from app.models.enums import UserRole
 
+# Import all models so SQLite creates all tables
+from app.models import (  # noqa: F401
+    User as _, RefreshToken, StudentProfile, SkillAssessment,
+    Company, JobRole, Interview, InterviewQuestion,
+    InterviewAnswer, InterviewAttempt, AnswerEvaluation,
+    EvaluationRun, PlacementReadiness, ReadinessHistory,
+    TalentProfile, CompanyShortlist, MatchResult,
+    LearningModule, StudentLearningProgress,
+    AntiCheatLog, AnswerSimilarity,
+)
+from app.models.scheduled_interview import ScheduledInterview  # noqa: F401
+from app.models.college_recommendation import CollegeRecommendation  # noqa: F401
+from app.models.activity_log import ActivityLog  # noqa: F401
+
 # Use SQLite in-memory for tests
 SQLALCHEMY_TEST_URL = "sqlite://"
 
@@ -95,6 +109,31 @@ def admin_user(db: Session) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+@pytest.fixture
+def college_user(db: Session) -> User:
+    user = User(
+        email="college@test.com",
+        hashed_password=hash_password("testpass123"),
+        full_name="Test Placement Officer",
+        role=UserRole.college_admin,
+        is_active=True,
+        college_name="Test University",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def college_token(client: TestClient, college_user: User) -> str:
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": "college@test.com", "password": "testpass123"},
+    )
+    return response.json()["access_token"]
 
 
 @pytest.fixture
