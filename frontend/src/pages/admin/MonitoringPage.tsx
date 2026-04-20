@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { PageWrapper } from '../../components/layout/PageWrapper';
 import { GlassCard } from '../../components/ui/GlassCard';
 import api from '../../services/api';
-import { Activity, Brain, Users, AlertTriangle, Loader2, IndianRupee, Zap, Clock, BarChart3, RefreshCw } from 'lucide-react';
+import { Activity, Brain, Users, AlertTriangle, Loader2, IndianRupee, Zap, Clock, BarChart3, RefreshCw, Database, Globe, Server } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface TokenData { total_tokens: number; total_cost_inr: number; openai_calls: number; ollama_calls: number; by_action: Record<string, { tokens: number; cost: number; count: number }>; top_users: Array<{ user_id: number; name: string; email: string; tokens: number; cost: number; count: number }>; daily: Array<{ date: string; tokens: number; cost: number }> }
 interface ActivityData { dau: number; wau: number; mau: number; total_signups: number; signups_by_source: Record<string, number>; daily_active: Array<{ date: string; count: number }>; recent: Array<{ user_id: number; action: string; detail: string; created_at: string }> }
 interface RevenueData { plan_distribution: Record<string, number>; monthly_revenue_inr: Record<string, number>; total_mrr_inr: number; total_paid_users: number; total_free_users: number; free_to_paid_conversion: number; total_demo_requests: number; demo_to_converted: number }
 interface HealthData { total_requests: number; avg_response_ms: number; error_count: number; error_rate: number; errors_by_endpoint: Record<string, number>; slowest_endpoints: Array<{ endpoint: string; avg_ms: number; count: number }>; ollama_success: number; openai_fallback: number; interviews_today: number; response_trend: Array<{ hour: string; avg_ms: number; count: number }> }
+interface DbData { version: string; database_name: string; size: string; region: string; host: string; table_count: number; total_rows: number; active_connections: number; provider: string; tables: Array<{ name: string; rows: number; size: string }> }
 
 const RANGES = [
   { label: '7d', days: 7 },
@@ -21,6 +22,7 @@ export function MonitoringPage() {
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [dbInfo, setDbInfo] = useState<DbData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState(30);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -31,8 +33,9 @@ export function MonitoringPage() {
       api.get<ActivityData>(`/admin/monitoring/activity?days=${range}`).then((r) => r.data).catch(() => null),
       api.get<RevenueData>('/admin/monitoring/revenue').then((r) => r.data).catch(() => null),
       api.get<HealthData>('/admin/monitoring/health').then((r) => r.data).catch(() => null),
-    ]).then(([t, a, r, h]) => {
-      setTokens(t); setActivity(a); setRevenue(r); setHealth(h);
+      api.get<DbData>('/admin/monitoring/database').then((r) => r.data).catch(() => null),
+    ]).then(([t, a, r, h, d]) => {
+      setTokens(t); setActivity(a); setRevenue(r); setHealth(h); setDbInfo(d as DbData | null);
       setLastRefresh(new Date());
     }).finally(() => setLoading(false));
   }, [range]);
@@ -303,6 +306,72 @@ export function MonitoringPage() {
           ) : <p className="text-gray-400 text-sm">No health data.</p>}
         </GlassCard>
       </div>
+
+      {/* Database Stats */}
+      {dbInfo && (
+        <GlassCard className="bg-white border-gray-100 mb-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Database size={18} className="text-blue-600" /> Database</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+            <div className="text-center bg-blue-50 rounded-lg p-2.5">
+              <Server size={14} className="text-blue-600 mx-auto mb-1" />
+              <p className="text-sm font-bold text-blue-700">{dbInfo.provider}</p>
+              <p className="text-[10px] text-blue-500">Provider</p>
+            </div>
+            <div className="text-center bg-emerald-50 rounded-lg p-2.5">
+              <Database size={14} className="text-emerald-600 mx-auto mb-1" />
+              <p className="text-sm font-bold text-emerald-700">{dbInfo.size}</p>
+              <p className="text-[10px] text-emerald-500">Storage Used</p>
+            </div>
+            <div className="text-center bg-indigo-50 rounded-lg p-2.5">
+              <Globe size={14} className="text-indigo-600 mx-auto mb-1" />
+              <p className="text-sm font-bold text-indigo-700">{dbInfo.region}</p>
+              <p className="text-[10px] text-indigo-500">Region</p>
+            </div>
+            <div className="text-center bg-orange-50 rounded-lg p-2.5">
+              <p className="text-sm font-bold text-orange-700">{dbInfo.table_count}</p>
+              <p className="text-[10px] text-orange-500">Tables</p>
+            </div>
+            <div className="text-center bg-green-50 rounded-lg p-2.5">
+              <p className="text-sm font-bold text-green-700">{dbInfo.total_rows.toLocaleString()}</p>
+              <p className="text-[10px] text-green-500">Total Rows</p>
+            </div>
+            <div className="text-center bg-purple-50 rounded-lg p-2.5">
+              <p className="text-sm font-bold text-purple-700">{dbInfo.active_connections}</p>
+              <p className="text-[10px] text-purple-500">Connections</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+            <span>Version: <strong className="text-gray-700">{dbInfo.version}</strong></span>
+            <span>DB: <strong className="text-gray-700">{dbInfo.database_name}</strong></span>
+            <span className="font-mono text-[10px] text-gray-400">{dbInfo.host}</span>
+          </div>
+          {dbInfo.tables.length > 0 && (
+            <details>
+              <summary className="text-xs font-medium text-gray-600 cursor-pointer hover:text-gray-800">Table Details ({dbInfo.tables.length} tables)</summary>
+              <div className="mt-2 max-h-[200px] overflow-y-auto">
+                <table className="w-full text-[10px]">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="text-left px-2 py-1 font-medium text-gray-500">Table</th>
+                      <th className="text-right px-2 py-1 font-medium text-gray-500">Rows</th>
+                      <th className="text-right px-2 py-1 font-medium text-gray-500">Size</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {dbInfo.tables.map((t) => (
+                      <tr key={t.name} className="hover:bg-gray-50">
+                        <td className="px-2 py-1 font-mono text-gray-700">{t.name}</td>
+                        <td className="px-2 py-1 text-right text-gray-600">{t.rows.toLocaleString()}</td>
+                        <td className="px-2 py-1 text-right text-gray-500">{t.size}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
+        </GlassCard>
+      )}
 
       {/* Top Token Consumers with names */}
       {tokens && tokens.top_users.length > 0 && (

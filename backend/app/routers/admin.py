@@ -8,7 +8,7 @@ from app.auth.dependencies import require_admin
 from app.models.user import User
 from app.models.interview import Interview
 from app.models.enums import UserRole
-from app.services.tracking_service import get_token_usage_summary, get_user_activity_summary, get_revenue_summary, get_health_metrics
+from app.services.tracking_service import get_token_usage_summary, get_user_activity_summary, get_revenue_summary, get_health_metrics, get_database_info
 from app.schemas.auth import UserResponse
 from app.exceptions import NotFoundError
 
@@ -104,6 +104,14 @@ async def user_activity(
     db: Session = Depends(get_db),
 ) -> dict:
     return get_user_activity_summary(db, days)
+
+
+@router.get("/monitoring/database")
+async def database_info(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_database_info(db)
 
 
 @router.get("/monitoring/revenue")

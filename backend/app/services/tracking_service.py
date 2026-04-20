@@ -275,3 +275,82 @@ def get_health_metrics(db: Session, hours: int = 24) -> dict:
         "interviews_today": interviews_today,
         "response_trend": [{"hour": str(h[0]), "avg_ms": round(float(h[1] or 0), 1), "count": h[2]} for h in hourly_response],
     }
+
+
+def get_database_info(db: Session) -> dict:
+    """Get database size, version, region, table counts."""
+    from sqlalchemy import text
+
+    try:
+        # DB version
+        version = db.execute(text("SELECT version()")).scalar() or ""
+        version_short = version.split("(")[0].strip() if version else "Unknown"
+
+        # DB size
+        db_size = db.execute(text("SELECT pg_size_pretty(pg_database_size(current_database()))")).scalar() or "Unknown"
+
+        # DB name
+        db_name = db.execute(text("SELECT current_database()")).scalar() or "Unknown"
+
+        # Table count
+        table_count = db.execute(text("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")).scalar() or 0
+
+        # Total rows across all tables
+        total_rows = 0
+        tables_info = []
+        table_names = db.execute(text("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).fetchall()
+        for (tname,) in table_names:
+            try:
+                count = db.execute(text(f"SELECT count(*) FROM \"{tname}\"")).scalar() or 0
+                size = db.execute(text(f"SELECT pg_size_pretty(pg_total_relation_size('\"{tname}\"'))")).scalar() or "0 bytes"
+                total_rows += count
+                tables_info.append({"name": tname, "rows": count, "size": size})
+            except Exception:
+                tables_info.append({"name": tname, "rows": 0, "size": "?"})
+
+        # Connection info (extract region from host)
+        connection_host = ""
+        try:
+            from app.config import settings
+            url = settings.DATABASE_URL
+            if "@" in url:
+                host_part = url.split("@")[1].split("/")[0]
+                connection_host = host_part
+        except Exception:
+            pass
+
+        # Detect region from Neon host
+        region = "Unknown"
+        if "us-east" in connection_host:
+            region = "US East (Virginia)"
+        elif "us-west" in connection_host:
+            region = "US West (Oregon)"
+        elif "ap-southeast" in connection_host:
+            region = "Asia Pacific (Singapore)"
+        elif "eu-central" in connection_host:
+            region = "Europe (Frankfurt)"
+        elif "ap-south" in connection_host:
+            region = "Asia Pacific (Mumbai)"
+        elif "neon.tech" in connection_host:
+            region = "Neon Cloud"
+        elif "localhost" in connection_host or "127.0.0.1" in connection_host:
+            region = "Local"
+
+        # Active connections
+        active_connections = db.execute(text("SELECT count(*) FROM pg_stat_activity")).scalar() or 0
+
+        return {
+            "version": version_short,
+            "database_name": db_name,
+            "size": db_size,
+            "region": region,
+            "host": connection_host,
+            "table_count": table_count,
+            "total_rows": total_rows,
+            "active_connections": active_connections,
+            "tables": sorted(tables_info, key=lambda x: x["rows"], reverse=True)[:15],
+            "provider": "Neon" if "neon.tech" in connection_host else "PostgreSQL",
+        }
+    except Exception as e:
+        logger.error("Database info query failed: %s", repr(e))
+        return {"error": str(e)}
