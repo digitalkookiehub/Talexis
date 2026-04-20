@@ -301,31 +301,62 @@ export function WorkflowPage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Shield size={18} className="text-red-600" /> Platform Admin Oversight
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <FlowCard title="User Management" role="admin" steps={[
-            { icon: <Users size={12} />, label: 'All Users', desc: 'Search, filter, pagination (15/page)' },
-            { icon: <Shield size={12} />, label: 'Role Control', desc: 'Change roles via dropdown' },
-            { icon: <CheckCircle size={12} />, label: 'Activate/Deactivate', desc: 'Per-user toggle' },
+            { icon: <Users size={12} />, label: 'All Users', desc: 'Search, filter, pagination, role change' },
+            { icon: <Shield size={12} />, label: 'Plan Management', desc: 'Assign subscription plans per user' },
+            { icon: <MessageSquare size={12} />, label: 'Demo Requests', desc: 'Review, contact, convert to accounts' },
           ]} />
-          <FlowCard title="Analytics" role="admin" steps={[
-            { icon: <TrendingUp size={12} />, label: '30-Day Trends', desc: 'Interview activity bar chart' },
-            { icon: <ClipboardCheck size={12} />, label: 'Score Distribution', desc: '0-3, 4-5, 6-7, 8-9, 10 buckets' },
-            { icon: <Users size={12} />, label: 'Users by Role', desc: 'Percentage breakdown' },
+          <FlowCard title="Monitoring" role="admin" steps={[
+            { icon: <Brain size={12} />, label: 'AI Token Usage', desc: 'Per user, per action, cost in ₹' },
+            { icon: <Users size={12} />, label: 'DAU / WAU / MAU', desc: 'Active users, signup source tracking' },
+            { icon: <Star size={12} />, label: 'Revenue', desc: 'MRR, plan distribution, conversion rates' },
+            { icon: <Shield size={12} />, label: 'Platform Health', desc: 'Error rate, response times, DB status' },
           ]} />
-          <FlowCard title="Anti-Cheat" role="admin" steps={[
-            { icon: <Shield size={12} />, label: 'Flag Detection', desc: 'Similarity, patterns, attempt limits' },
-            { icon: <ClipboardCheck size={12} />, label: 'Drill-Down', desc: 'Flagged interviews, expand for details' },
-            { icon: <User size={12} />, label: 'Student Info', desc: 'Name, score, flag severity' },
+          <FlowCard title="Analytics & Safety" role="admin" steps={[
+            { icon: <TrendingUp size={12} />, label: '30-Day Trends', desc: 'Interviews, scores, users by role' },
+            { icon: <Shield size={12} />, label: 'Anti-Cheat', desc: 'Flags, drill-down, per-interview details' },
+            { icon: <ClipboardCheck size={12} />, label: 'Database', desc: 'Neon cloud, size, region, table stats' },
           ]} />
-          <FlowCard title="System Health" role="admin" steps={[
-            { icon: <Brain size={12} />, label: 'LLM Status', desc: 'Ollama online/offline, models listed' },
-            { icon: <Shield size={12} />, label: 'DB & Auth', desc: 'PostgreSQL host, JWT config' },
-            { icon: <FileText size={12} />, label: 'Uploads', desc: 'Directory, max file size' },
+          <FlowCard title="Tools" role="admin" steps={[
+            { icon: <GitBranch size={12} />, label: 'Workflow', desc: 'This page — full platform visualization' },
+            { icon: <FileText size={12} />, label: 'User Guide', desc: 'Business guide with PDF download' },
+            { icon: <Shield size={12} />, label: 'Settings', desc: 'LLM, DB, auth, upload config' },
           ]} />
-          <FlowCard title="Workflow View" role="admin" steps={[
-            { icon: <GitBranch size={12} />, label: 'This Page', desc: 'Complete platform flow visualization' },
-            { icon: <ClipboardCheck size={12} />, label: 'Tech Stack', desc: 'All technologies documented' },
-          ]} />
+        </div>
+      </GlassCard>
+
+      {/* ===== Pricing & Payments ===== */}
+      <GlassCard className="bg-emerald-50 border-emerald-200 mb-6">
+        <h2 className="text-sm font-semibold text-emerald-800 mb-3 flex items-center gap-2">
+          <Star size={16} /> Pricing & Subscription Plans (INR)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+          {[
+            { plan: 'Free', price: '₹0', limits: '3 interviews/mo, basic only' },
+            { plan: 'Pro Candidate', price: '₹399/mo', limits: 'Unlimited interviews, all levels, visibility' },
+            { plan: 'College', price: '₹149/student/yr', limits: 'Unlimited for all students, bulk import' },
+            { plan: 'Company Starter', price: '₹7,999/mo', limits: '50 browses, 5 shortlists, 3 schedules' },
+            { plan: 'Company Growth', price: '₹24,999/mo', limits: 'Unlimited browse, 20 schedules, AI matching' },
+            { plan: 'Enterprise', price: 'Custom', limits: 'Unlimited everything, API access' },
+          ].map((p) => (
+            <div key={p.plan} className="bg-white rounded-lg p-2 border border-emerald-100 text-center">
+              <p className="font-semibold text-emerald-800">{p.plan}</p>
+              <p className="text-emerald-600 font-bold">{p.price}</p>
+              <p className="text-[9px] text-gray-500 mt-1">{p.limits}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center gap-2 flex-wrap text-[10px]">
+          <span className="px-2 py-1 bg-white text-emerald-700 rounded font-medium">Homepage → Pricing page first</span>
+          <ArrowRight size={8} className="text-gray-300" />
+          <span className="px-2 py-1 bg-white text-emerald-700 rounded font-medium">Select plan</span>
+          <ArrowRight size={8} className="text-gray-300" />
+          <span className="px-2 py-1 bg-white text-emerald-700 rounded font-medium">Dodo Payments checkout</span>
+          <ArrowRight size={8} className="text-gray-300" />
+          <span className="px-2 py-1 bg-white text-emerald-700 rounded font-medium">Payment success → Signup</span>
+          <ArrowRight size={8} className="text-gray-300" />
+          <span className="px-2 py-1 bg-white text-emerald-700 rounded font-medium">Company: Request Demo → Admin reviews → Account created</span>
         </div>
       </GlassCard>
 
