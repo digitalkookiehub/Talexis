@@ -9,7 +9,7 @@ interface TokenData { total_tokens: number; total_cost_inr: number; openai_calls
 interface ActivityData { dau: number; wau: number; mau: number; total_signups: number; signups_by_source: Record<string, number>; daily_active: Array<{ date: string; count: number }>; recent: Array<{ user_id: number; action: string; detail: string; created_at: string }> }
 interface RevenueData { plan_distribution: Record<string, number>; monthly_revenue_inr: Record<string, number>; total_mrr_inr: number; total_paid_users: number; total_free_users: number; free_to_paid_conversion: number; total_demo_requests: number; demo_to_converted: number }
 interface HealthData { total_requests: number; avg_response_ms: number; error_count: number; error_rate: number; errors_by_endpoint: Record<string, number>; slowest_endpoints: Array<{ endpoint: string; avg_ms: number; count: number }>; ollama_success: number; openai_fallback: number; interviews_today: number; response_trend: Array<{ hour: string; avg_ms: number; count: number }> }
-interface DbData { version: string; database_name: string; size: string; region: string; host: string; table_count: number; total_rows: number; active_connections: number; provider: string; tables: Array<{ name: string; rows: number; size: string }> }
+interface DbData { version: string; database_name: string; size: string; region: string; host: string; table_count: number; total_rows: number; active_connections: number; provider: string; tables: Array<{ name: string; rows: number; size: string }>; error?: string }
 
 const RANGES = [
   { label: '7d', days: 7 },
@@ -310,7 +310,20 @@ export function MonitoringPage() {
       {/* Database Stats */}
       {dbInfo && (
         <GlassCard className="bg-white border-gray-100 mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Database size={18} className="text-blue-600" /> Database</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2"><Database size={18} className="text-blue-600" /> Database</h2>
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${dbInfo.error ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              <span className={`w-2 h-2 rounded-full ${dbInfo.error ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
+              {dbInfo.error ? 'Offline' : 'Online'}
+            </span>
+          </div>
+          {dbInfo.error ? (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <p className="font-medium">Database connection failed</p>
+              <p className="text-xs text-red-500 mt-1">{dbInfo.error}</p>
+            </div>
+          ) : (
+          <>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
             <div className="text-center bg-blue-50 rounded-lg p-2.5">
               <Server size={14} className="text-blue-600 mx-auto mb-1" />
@@ -369,6 +382,8 @@ export function MonitoringPage() {
                 </table>
               </div>
             </details>
+          )}
+          </>
           )}
         </GlassCard>
       )}
