@@ -239,6 +239,12 @@ async def generate_question(db: Session, interview: Interview) -> InterviewQuest
     try:
         question_text = await local_llm.generate(prompt, system=QUESTION_GENERATION_SYSTEM)
         question_text = question_text.strip().strip('"')
+        # Track token usage for question generation (Ollama doesn't report tokens, but log the call)
+        try:
+            from app.services.tracking_service import log_token_usage
+            log_token_usage(db, user_id=interview.student_id, action="question_gen", provider="ollama", model="local", prompt_tokens=len(prompt.split()), completion_tokens=len(question_text.split()))
+        except Exception:
+            pass
     except Exception as e:
         logger.error("Question generation failed: %s", str(e))
         question_text = f"Tell me about your experience with {interview.interview_type.value} skills."

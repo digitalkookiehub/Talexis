@@ -126,6 +126,19 @@ async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEv
 
         try:
             result = await _evaluate_answer(prompt)
+            # Track token usage per question
+            try:
+                from app.services.tracking_service import log_token_usage
+                from app.services.llm.cloud_llm import get_last_usage
+                usage = get_last_usage()
+                if usage.get("total_tokens", 0) > 0:
+                    log_token_usage(
+                        db, user_id=interview.student_id, action="evaluation",
+                        provider="openai", model=settings.OPENAI_MODEL,
+                        prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"],
+                    )
+            except Exception:
+                pass
         except Exception as e:
             logger.error("Evaluation failed for answer %s: %s", answer.id, str(e))
             result = {
@@ -214,6 +227,19 @@ async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEv
         summary_result = await _generate_summary(summary_prompt)
         interview.overall_summary = summary_result.get("summary", "")
         interview.overall_feedback = summary_result.get("feedback", "")
+        # Track summary token usage
+        try:
+            from app.services.tracking_service import log_token_usage
+            from app.services.llm.cloud_llm import get_last_usage
+            usage = get_last_usage()
+            if usage.get("total_tokens", 0) > 0:
+                log_token_usage(
+                    db, user_id=interview.student_id, action="summary",
+                    provider="openai", model=settings.OPENAI_MODEL,
+                    prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"],
+                )
+        except Exception:
+            pass
         db.commit()
         logger.info("Overall summary generated for interview %s", interview.id)
     except Exception as e:
