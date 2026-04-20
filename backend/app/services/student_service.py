@@ -233,6 +233,16 @@ async def parse_resume(db: Session, profile: StudentProfile) -> dict:
         else:
             parsed = json.loads(response)
         logger.info("Resume parsed via local LLM for student %s", profile.id)
+        # Track token usage for resume parsing (Ollama)
+        try:
+            from app.services.tracking_service import log_token_usage
+            log_token_usage(
+                db, user_id=profile.id, action="resume_parse",
+                provider="ollama", model="local",
+                prompt_tokens=len(prompt.split()), completion_tokens=len(response.split()),
+            )
+        except Exception:
+            pass
     except Exception as local_err:
         logger.warning("Local LLM resume parsing failed: %s", repr(local_err))
 
@@ -241,6 +251,19 @@ async def parse_resume(db: Session, profile: StudentProfile) -> dict:
         try:
             parsed = await cloud_llm.evaluate(prompt, system=RESUME_PARSING_SYSTEM)
             logger.info("Resume parsed via OpenAI fallback for student %s", profile.id)
+            # Track token usage for resume parsing (OpenAI)
+            try:
+                from app.services.tracking_service import log_token_usage
+                from app.services.llm.cloud_llm import get_last_usage
+                usage = get_last_usage()
+                if usage.get("total_tokens", 0) > 0:
+                    log_token_usage(
+                        db, user_id=profile.id, action="resume_parse",
+                        provider="openai", model=settings.OPENAI_MODEL,
+                        prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"],
+                    )
+            except Exception:
+                pass
         except Exception as cloud_err:
             logger.warning("Cloud LLM resume parsing also failed: %s", repr(cloud_err))
 

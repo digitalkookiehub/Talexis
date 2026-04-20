@@ -10,7 +10,9 @@ class TokenUsage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    action = Column(String(50), nullable=False)  # evaluation, summary, screening, question_gen
+    interview_id = Column(Integer, ForeignKey("interviews.id", ondelete="SET NULL"), nullable=True, index=True)
+    question_id = Column(Integer, nullable=True)  # track which question triggered this usage
+    action = Column(String(50), nullable=False)  # evaluation, summary, question_gen, resume_parse
     provider = Column(String(20), nullable=False)  # openai, ollama
     model = Column(String(50), nullable=True)
     prompt_tokens = Column(Integer, nullable=False, default=0)

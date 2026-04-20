@@ -8,7 +8,7 @@ from app.auth.dependencies import require_admin
 from app.models.user import User
 from app.models.interview import Interview
 from app.models.enums import UserRole
-from app.services.tracking_service import get_token_usage_summary, get_user_activity_summary, get_revenue_summary, get_health_metrics, get_database_info
+from app.services.tracking_service import get_token_usage_summary, get_user_activity_summary, get_revenue_summary, get_health_metrics, get_database_info, get_interview_token_detail, get_per_user_interview_costs
 from app.schemas.auth import UserResponse
 from app.exceptions import NotFoundError
 
@@ -129,6 +129,24 @@ async def health_metrics(
     db: Session = Depends(get_db),
 ) -> dict:
     return get_health_metrics(db, hours)
+
+
+@router.get("/monitoring/interview-costs")
+async def interview_costs(
+    days: int = Query(30, ge=1, le=365),
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    return get_per_user_interview_costs(db, days)
+
+
+@router.get("/monitoring/interview/{interview_id}/tokens")
+async def interview_token_breakdown(
+    interview_id: int,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_interview_token_detail(db, interview_id)
 
 
 @router.get("/stats")

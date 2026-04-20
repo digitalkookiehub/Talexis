@@ -19,6 +19,7 @@ COST_PER_1M = {
 def log_token_usage(
     db: Session, user_id: int | None, action: str, provider: str,
     model: str = "", prompt_tokens: int = 0, completion_tokens: int = 0,
+    interview_id: int | None = None, question_id: int | None = None,
 ) -> None:
     try:
         total = prompt_tokens + completion_tokens
@@ -31,6 +32,7 @@ def log_token_usage(
             user_id=user_id, action=action, provider=provider, model=model,
             prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
             total_tokens=total, cost_inr=round(cost, 4),
+            interview_id=interview_id, question_id=question_id,
         )
         db.add(entry)
         db.commit()
@@ -122,6 +124,82 @@ def get_token_usage_summary(db: Session, days: int = 30) -> dict:
         "top_users": top_users,
         "daily": [{"date": str(d[0]), "tokens": d[1], "cost": round(float(d[2] or 0), 2)} for d in daily],
     }
+
+
+def get_interview_token_detail(db: Session, interview_id: int) -> dict:
+    """Get per-question token breakdown for a specific interview."""
+    rows = db.query(TokenUsage).filter(TokenUsage.interview_id == interview_id).all()
+    if not rows:
+        return {"interview_id": interview_id, "total_tokens": 0, "total_cost_inr": 0, "breakdown": []}
+
+    total_tokens = sum(r.total_tokens for r in rows)
+    total_cost = sum(r.cost_inr for r in rows)
+
+    breakdown = []
+    for r in rows:
+        breakdown.append({
+            "action": r.action,
+            "question_id": r.question_id,
+            "provider": r.provider,
+            "model": r.model,
+            "prompt_tokens": r.prompt_tokens,
+            "completion_tokens": r.completion_tokens,
+            "total_tokens": r.total_tokens,
+            "cost_inr": round(r.cost_inr, 4),
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+
+    return {
+        "interview_id": interview_id,
+        "total_tokens": total_tokens,
+        "total_cost_inr": round(total_cost, 4),
+        "question_gen_tokens": sum(r.total_tokens for r in rows if r.action == "question_gen"),
+        "evaluation_tokens": sum(r.total_tokens for r in rows if r.action == "evaluation"),
+        "summary_tokens": sum(r.total_tokens for r in rows if r.action == "summary"),
+        "breakdown": sorted(breakdown, key=lambda x: x["created_at"] or ""),
+    }
+
+
+def get_per_user_interview_costs(db: Session, days: int = 30) -> list[dict]:
+    """Get token costs grouped by interview for the admin dashboard."""
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    from app.models.interview import Interview
+    from app.models.user import User
+
+    # Get all interviews with token usage in the period
+    rows = (
+        db.query(
+            TokenUsage.interview_id,
+            func.sum(TokenUsage.total_tokens).label("tokens"),
+            func.sum(TokenUsage.cost_inr).label("cost"),
+            func.count().label("calls"),
+            TokenUsage.user_id,
+        )
+        .filter(TokenUsage.created_at >= since, TokenUsage.interview_id.isnot(None))
+        .group_by(TokenUsage.interview_id, TokenUsage.user_id)
+        .order_by(func.sum(TokenUsage.total_tokens).desc())
+        .limit(50)
+        .all()
+    )
+
+    results = []
+    for row in rows:
+        interview = db.query(Interview).filter(Interview.id == row.interview_id).first()
+        user = db.query(User).filter(User.id == row.user_id).first() if row.user_id else None
+        results.append({
+            "interview_id": row.interview_id,
+            "user_id": row.user_id,
+            "user_name": user.full_name or user.email if user else f"User #{row.user_id}",
+            "interview_type": interview.interview_type.value if interview else "unknown",
+            "difficulty": interview.difficulty_level.value if interview else "unknown",
+            "questions_answered": interview.questions_answered if interview else 0,
+            "total_tokens": row.tokens,
+            "total_cost_inr": round(float(row.cost or 0), 4),
+            "api_calls": row.calls,
+            "created_at": interview.created_at.isoformat() if interview and interview.created_at else None,
+        })
+
+    return results
 
 
 def get_user_activity_summary(db: Session, days: int = 30) -> dict:

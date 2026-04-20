@@ -10,6 +10,7 @@ interface ActivityData { dau: number; wau: number; mau: number; total_signups: n
 interface RevenueData { plan_distribution: Record<string, number>; monthly_revenue_inr: Record<string, number>; total_mrr_inr: number; total_paid_users: number; total_free_users: number; free_to_paid_conversion: number; total_demo_requests: number; demo_to_converted: number }
 interface HealthData { total_requests: number; avg_response_ms: number; error_count: number; error_rate: number; errors_by_endpoint: Record<string, number>; slowest_endpoints: Array<{ endpoint: string; avg_ms: number; count: number }>; ollama_success: number; openai_fallback: number; interviews_today: number; response_trend: Array<{ hour: string; avg_ms: number; count: number }> }
 interface DbData { version: string; database_name: string; size: string; region: string; host: string; table_count: number; total_rows: number; active_connections: number; provider: string; tables: Array<{ name: string; rows: number; size: string }>; error?: string }
+interface InterviewCost { interview_id: number; user_id: number; user_name: string; interview_type: string; difficulty: string; questions_answered: number; total_tokens: number; total_cost_inr: number; api_calls: number; created_at: string | null }
 
 const RANGES = [
   { label: '7d', days: 7 },
@@ -23,6 +24,7 @@ export function MonitoringPage() {
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [dbInfo, setDbInfo] = useState<DbData | null>(null);
+  const [interviewCosts, setInterviewCosts] = useState<InterviewCost[]>([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState(30);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -34,8 +36,10 @@ export function MonitoringPage() {
       api.get<RevenueData>('/admin/monitoring/revenue').then((r) => r.data).catch(() => null),
       api.get<HealthData>('/admin/monitoring/health').then((r) => r.data).catch(() => null),
       api.get<DbData>('/admin/monitoring/database').then((r) => r.data).catch(() => null),
-    ]).then(([t, a, r, h, d]) => {
+      api.get<InterviewCost[]>(`/admin/monitoring/interview-costs?days=${range}`).then((r) => r.data).catch(() => []),
+    ]).then(([t, a, r, h, d, ic]) => {
       setTokens(t); setActivity(a); setRevenue(r); setHealth(h); setDbInfo(d as DbData | null);
+      setInterviewCosts(ic as InterviewCost[] ?? []);
       setLastRefresh(new Date());
     }).finally(() => setLoading(false));
   }, [range]);
@@ -416,6 +420,48 @@ export function MonitoringPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Per-Interview Token Costs */}
+      {interviewCosts.length > 0 && (
+        <GlassCard className="bg-white border-gray-100 mb-6">
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Brain size={18} className="text-indigo-600" /> Per-Interview Token Cost ({range}d)</h2>
+          <p className="text-xs text-gray-500 mb-3">Token usage per interview session — includes question generation, evaluation, and summary.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium text-gray-500">Candidate</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-500">Type</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-500">Difficulty</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-500">Questions</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-500">API Calls</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-500">Tokens</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-500">Cost (₹)</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-500">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {interviewCosts.map((ic) => (
+                  <tr key={ic.interview_id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 text-gray-800 font-medium">{ic.user_name}</td>
+                    <td className="px-3 py-2 capitalize text-gray-600">{ic.interview_type}</td>
+                    <td className="px-3 py-2 capitalize text-gray-600">{ic.difficulty}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{ic.questions_answered}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{ic.api_calls}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{ic.total_tokens.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right font-medium text-amber-600">₹{ic.total_cost_inr.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right text-gray-400 text-[10px]">{ic.created_at ? new Date(ic.created_at).toLocaleDateString() : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 text-[10px] text-gray-400 flex items-center justify-between">
+            <span>Showing top 50 interviews by token usage</span>
+            <span>Total: {interviewCosts.reduce((s, c) => s + c.total_tokens, 0).toLocaleString()} tokens, ₹{interviewCosts.reduce((s, c) => s + c.total_cost_inr, 0).toFixed(2)}</span>
           </div>
         </GlassCard>
       )}

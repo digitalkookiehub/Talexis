@@ -136,6 +136,7 @@ async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEv
                         db, user_id=interview.student_id, action="evaluation",
                         provider="openai", model=settings.OPENAI_MODEL,
                         prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"],
+                        interview_id=interview.id, question_id=question.id,
                     )
             except Exception:
                 pass
@@ -237,6 +238,7 @@ async def evaluate_interview(db: Session, interview: Interview) -> list[AnswerEv
                     db, user_id=interview.student_id, action="summary",
                     provider="openai", model=settings.OPENAI_MODEL,
                     prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"],
+                    interview_id=interview.id,
                 )
         except Exception:
             pass
