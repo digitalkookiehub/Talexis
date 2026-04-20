@@ -40,6 +40,30 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     )
 
 
+# API metrics middleware — tracks response times and errors
+import time as _time
+
+@app.middleware("http")
+async def track_api_metrics(request: Request, call_next):
+    start = _time.time()
+    response = await call_next(request)
+    duration_ms = (_time.time() - start) * 1000
+
+    # Only track API endpoints, skip static files
+    path = request.url.path
+    if path.startswith("/api/") and duration_ms > 100:  # Only log slow requests or errors
+        try:
+            from app.database import SessionLocal
+            from app.services.tracking_service import log_api_metric
+            db = SessionLocal()
+            log_api_metric(db, path, request.method, response.status_code, duration_ms)
+            db.close()
+        except Exception:
+            pass
+
+    return response
+
+
 @app.get("/health")
 async def health() -> dict:
     return {"status": "healthy", "app": settings.APP_NAME}

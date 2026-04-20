@@ -52,6 +52,7 @@ import { AdminAnalyticsPage } from './pages/admin/AnalyticsPage';
 import { AntiCheatPage } from './pages/admin/AntiCheatPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { WorkflowPage } from './pages/admin/WorkflowPage';
+import { MonitoringPage } from './pages/admin/MonitoringPage';
 import { UserGuidePage } from './pages/admin/UserGuidePage';
 
 import type { UserRole } from './types';
@@ -163,6 +164,7 @@ export default function App() {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="workflow" element={<WorkflowPage />} />
                 <Route path="guide" element={<UserGuidePage />} />
+                <Route path="monitoring" element={<MonitoringPage />} />
               </Routes>
             </AppLayout>
           </ProtectedRoute>

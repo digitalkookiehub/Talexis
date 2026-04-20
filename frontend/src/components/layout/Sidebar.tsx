@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, User, FileText, Brain, ClipboardCheck,
   TrendingUp, BarChart3, Building2, Users,
-  Briefcase, Heart, Settings, LogOut, GraduationCap, GitBranch, BookOpen,
+  Briefcase, Heart, Settings, LogOut, GraduationCap, GitBranch, BookOpen, Activity,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { UserRole } from '../../types';
@@ -50,6 +50,7 @@ const adminNav: NavItem[] = [
   { to: '/admin/users', label: 'Users', icon: <Users size={20} /> },
   { to: '/admin/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
   { to: '/admin/anticheat', label: 'Anti-Cheat', icon: <Heart size={20} /> },
+  { to: '/admin/monitoring', label: 'Monitoring', icon: <Activity size={20} /> },
   { to: '/admin/workflow', label: 'Workflow', icon: <GitBranch size={20} /> },
   { to: '/admin/guide', label: 'User Guide', icon: <BookOpen size={20} /> },
   { to: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },

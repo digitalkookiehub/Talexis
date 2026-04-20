@@ -8,6 +8,7 @@ from app.auth.dependencies import require_admin
 from app.models.user import User
 from app.models.interview import Interview
 from app.models.enums import UserRole
+from app.services.tracking_service import get_token_usage_summary, get_user_activity_summary, get_revenue_summary, get_health_metrics
 from app.schemas.auth import UserResponse
 from app.exceptions import NotFoundError
 
@@ -85,6 +86,41 @@ async def list_plans(
         key: {"name": p["name"], "price_inr": p["price_inr"], "billing": p["billing"]}
         for key, p in DEFAULT_PLANS.items()
     }
+
+
+@router.get("/monitoring/tokens")
+async def token_usage(
+    days: int = Query(30, ge=1, le=365),
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_token_usage_summary(db, days)
+
+
+@router.get("/monitoring/activity")
+async def user_activity(
+    days: int = Query(30, ge=1, le=365),
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_user_activity_summary(db, days)
+
+
+@router.get("/monitoring/revenue")
+async def revenue(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_revenue_summary(db)
+
+
+@router.get("/monitoring/health")
+async def health_metrics(
+    hours: int = Query(24, ge=1, le=168),
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_health_metrics(db, hours)
 
 
 @router.get("/stats")

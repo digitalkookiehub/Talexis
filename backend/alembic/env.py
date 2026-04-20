@@ -22,6 +22,7 @@ from app.models.activity_log import ActivityLog  # noqa: F401
 from app.models.demo_request import DemoRequest  # noqa: F401
 from app.models.job_application import JobApplication  # noqa: F401
 from app.models.subscription import UserSubscription  # noqa: F401
+from app.models.tracking import TokenUsage, UserActivity, ApiMetric  # noqa: F401
 
 config = context.config
 

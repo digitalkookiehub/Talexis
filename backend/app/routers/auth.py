@@ -24,7 +24,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(req: RegisterRequest, db: Session = Depends(get_db)) -> User:
-    return register_user(db, req.email, req.password, req.full_name, req.role)
+    user = register_user(db, req.email, req.password, req.full_name, req.role)
+    try:
+        from app.services.tracking_service import log_user_activity
+        log_user_activity(db, user.id, "signup", detail=req.role.value)
+    except Exception:
+        pass
+    return user
 
 
 @router.post("/login", response_model=Token)
@@ -32,6 +38,11 @@ async def login(
     form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ) -> dict:
     user = authenticate_user(db, form.username, form.password)
+    try:
+        from app.services.tracking_service import log_user_activity
+        log_user_activity(db, user.id, "login", detail=user.role.value)
+    except Exception:
+        pass
     return create_tokens(db, user)
 
 
