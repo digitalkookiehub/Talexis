@@ -96,7 +96,13 @@ def get_token_usage_summary(db: Session, days: int = 30) -> dict:
             user_usage[r.user_id]["cost"] += r.cost_inr
             user_usage[r.user_id]["count"] += 1
 
-    top_users = sorted(user_usage.items(), key=lambda x: x[1]["tokens"], reverse=True)[:10]
+    top_users_raw = sorted(user_usage.items(), key=lambda x: x[1]["tokens"], reverse=True)[:10]
+    # Resolve user names
+    from app.models.user import User
+    top_users = []
+    for uid, data in top_users_raw:
+        u = db.query(User).filter(User.id == uid).first()
+        top_users.append({"user_id": uid, "name": u.full_name or u.email if u else f"User #{uid}", "email": u.email if u else "", **data})
 
     # Daily breakdown
     daily = (
@@ -113,7 +119,7 @@ def get_token_usage_summary(db: Session, days: int = 30) -> dict:
         "openai_calls": openai_calls,
         "ollama_calls": ollama_calls,
         "by_action": by_action,
-        "top_users": [{"user_id": uid, **data} for uid, data in top_users],
+        "top_users": top_users,
         "daily": [{"date": str(d[0]), "tokens": d[1], "cost": round(float(d[2] or 0), 2)} for d in daily],
     }
 
@@ -158,6 +164,7 @@ def get_user_activity_summary(db: Session, days: int = 30) -> dict:
         "dau": dau,
         "wau": wau,
         "mau": mau,
+        "total_signups": sum(s[1] for s in signups),
         "signups_by_source": {str(s[0] or "unknown"): s[1] for s in signups},
         "daily_active": [{"date": str(d[0]), "count": d[1]} for d in daily_active],
         "recent": [
@@ -238,6 +245,24 @@ def get_health_metrics(db: Session, hours: int = 24) -> dict:
     ollama_ok = sum(1 for r in token_rows if r.provider == "ollama")
     openai_fallback = sum(1 for r in token_rows if r.provider == "openai")
 
+    # Interviews today
+    from app.models.interview import Interview
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+    interviews_today = db.query(func.count(Interview.id)).filter(Interview.created_at >= today_start).scalar() or 0
+
+    # Response time trend (hourly)
+    hourly_response = (
+        db.query(
+            func.date_trunc('hour', ApiMetric.created_at).label("hour"),
+            func.avg(ApiMetric.response_time_ms),
+            func.count(),
+        )
+        .filter(ApiMetric.created_at >= since)
+        .group_by(func.date_trunc('hour', ApiMetric.created_at))
+        .order_by(func.date_trunc('hour', ApiMetric.created_at))
+        .all()
+    )
+
     return {
         "total_requests": total,
         "avg_response_ms": round(avg_response, 1),
@@ -247,4 +272,6 @@ def get_health_metrics(db: Session, hours: int = 24) -> dict:
         "slowest_endpoints": slowest,
         "ollama_success": ollama_ok,
         "openai_fallback": openai_fallback,
+        "interviews_today": interviews_today,
+        "response_trend": [{"hour": str(h[0]), "avg_ms": round(float(h[1] or 0), 1), "count": h[2]} for h in hourly_response],
     }
