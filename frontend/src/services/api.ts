@@ -4,6 +4,16 @@ const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:8001'}/api/v1`,
 });
 
+// Global API error event — picked up by ToastContext to show error toasts
+type ApiErrorHandler = (message: string) => void;
+let _onApiError: ApiErrorHandler | null = null;
+export function setApiErrorHandler(handler: ApiErrorHandler) {
+  _onApiError = handler;
+}
+export function clearApiErrorHandler() {
+  _onApiError = null;
+}
+
 api.interceptors.request.use((config) => {
   // Don't attach token for auth endpoints (login, register, refresh)
   const isAuthEndpoint = config.url?.startsWith('/auth/login') ||
@@ -47,6 +57,18 @@ api.interceptors.response.use(
           window.location.href = '/login';
         }
       }
+    }
+    // Show toast for non-401 errors (401 is handled above via refresh)
+    if (error.response?.status !== 401 && _onApiError) {
+      const detail = error.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : error.response?.status === 500 ? 'Server error. Please try again.'
+        : error.response?.status === 403 ? 'Access denied.'
+        : error.response?.status === 404 ? 'Resource not found.'
+        : error.response?.status === 429 ? 'Too many requests. Please wait.'
+        : error.message === 'Network Error' ? 'Cannot connect to server. Check your connection.'
+        : '';
+      if (msg) _onApiError(msg);
     }
     return Promise.reject(error);
   }

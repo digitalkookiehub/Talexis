@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 // Auth pages
 import { HomePage } from './pages/auth/HomePage';
@@ -90,23 +91,25 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['student']}>
             <AppLayout>
-              <Routes>
-                <Route path="dashboard" element={<StudentDashboardPage />} />
-                <Route path="profile" element={<StudentProfilePage />} />
-                <Route path="resume" element={<ResumePage />} />
-                <Route path="skills" element={<SkillsPage />} />
-                <Route path="interviews" element={<InterviewSelectPage />} />
-                <Route path="interviews/history" element={<InterviewHistoryPage />} />
-                <Route path="interviews/:id" element={<LiveInterviewPage />} />
-                <Route path="interviews/:id/results" element={<InterviewResultsPage />} />
-                <Route path="interviews/:id/feedback" element={<InterviewResultsPage />} />
-                <Route path="scorecard" element={<ScorecardPage />} />
-                <Route path="readiness" element={<ReadinessPage />} />
-                <Route path="learn" element={<LearningHubPage />} />
-                <Route path="learn/:id" element={<LearningModulePage />} />
-                <Route path="jobs" element={<JobBoardPage />} />
-                <Route path="analytics" element={<StudentAnalyticsPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="dashboard" element={<StudentDashboardPage />} />
+                  <Route path="profile" element={<StudentProfilePage />} />
+                  <Route path="resume" element={<ResumePage />} />
+                  <Route path="skills" element={<SkillsPage />} />
+                  <Route path="interviews" element={<InterviewSelectPage />} />
+                  <Route path="interviews/history" element={<InterviewHistoryPage />} />
+                  <Route path="interviews/:id" element={<LiveInterviewPage />} />
+                  <Route path="interviews/:id/results" element={<InterviewResultsPage />} />
+                  <Route path="interviews/:id/feedback" element={<InterviewResultsPage />} />
+                  <Route path="scorecard" element={<ScorecardPage />} />
+                  <Route path="readiness" element={<ReadinessPage />} />
+                  <Route path="learn" element={<LearningHubPage />} />
+                  <Route path="learn/:id" element={<LearningModulePage />} />
+                  <Route path="jobs" element={<JobBoardPage />} />
+                  <Route path="analytics" element={<StudentAnalyticsPage />} />
+                </Routes>
+              </ErrorBoundary>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -118,16 +121,18 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['company']}>
             <AppLayout>
-              <Routes>
-                <Route path="dashboard" element={<CompanyDashboardPage />} />
-                <Route path="profile" element={<CompanyProfilePage />} />
-                <Route path="talents" element={<TalentBrowsePage />} />
-                <Route path="talents/:code" element={<TalentDetailPage />} />
-                <Route path="shortlist" element={<ShortlistPage />} />
-                <Route path="jobs" element={<JobsPage />} />
-                <Route path="schedule" element={<SchedulePage />} />
-                <Route path="analytics" element={<CompanyAnalyticsPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="dashboard" element={<CompanyDashboardPage />} />
+                  <Route path="profile" element={<CompanyProfilePage />} />
+                  <Route path="talents" element={<TalentBrowsePage />} />
+                  <Route path="talents/:code" element={<TalentDetailPage />} />
+                  <Route path="shortlist" element={<ShortlistPage />} />
+                  <Route path="jobs" element={<JobsPage />} />
+                  <Route path="schedule" element={<SchedulePage />} />
+                  <Route path="analytics" element={<CompanyAnalyticsPage />} />
+                </Routes>
+              </ErrorBoundary>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -139,12 +144,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['college_admin']}>
             <AppLayout>
-              <Routes>
-                <Route index element={<CollegeDashboardPage />} />
-                <Route path="students" element={<StudentRosterPage />} />
-                <Route path="analytics" element={<CollegeAnalyticsPage />} />
-                <Route path="placements" element={<PlacementPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route index element={<CollegeDashboardPage />} />
+                  <Route path="students" element={<StudentRosterPage />} />
+                  <Route path="analytics" element={<CollegeAnalyticsPage />} />
+                  <Route path="placements" element={<PlacementPage />} />
+                </Routes>
+              </ErrorBoundary>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -156,16 +163,18 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AppLayout>
-              <Routes>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="users" element={<UsersPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="anticheat" element={<AntiCheatPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="workflow" element={<WorkflowPage />} />
-                <Route path="guide" element={<UserGuidePage />} />
-                <Route path="monitoring" element={<MonitoringPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="users" element={<UsersPage />} />
+                  <Route path="analytics" element={<AdminAnalyticsPage />} />
+                  <Route path="anticheat" element={<AntiCheatPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="workflow" element={<WorkflowPage />} />
+                  <Route path="guide" element={<UserGuidePage />} />
+                  <Route path="monitoring" element={<MonitoringPage />} />
+                </Routes>
+              </ErrorBoundary>
             </AppLayout>
           </ProtectedRoute>
         }

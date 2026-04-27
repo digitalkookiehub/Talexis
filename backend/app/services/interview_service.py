@@ -242,7 +242,12 @@ async def generate_question(db: Session, interview: Interview) -> InterviewQuest
         # Track token usage for question generation (Ollama doesn't report tokens, but log the call)
         try:
             from app.services.tracking_service import log_token_usage
-            log_token_usage(db, user_id=interview.student_id, action="question_gen", provider="ollama", model="local", prompt_tokens=len(prompt.split()), completion_tokens=len(question_text.split()))
+            log_token_usage(
+                db, user_id=interview.student_id, action="question_gen",
+                provider="ollama", model="local",
+                prompt_tokens=len(prompt.split()), completion_tokens=len(question_text.split()),
+                interview_id=interview.id,
+            )
         except Exception:
             pass
     except Exception as e:

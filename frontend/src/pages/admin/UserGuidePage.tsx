@@ -99,7 +99,7 @@ export function UserGuidePage() {
           <div>
             <h3 className="text-sm font-semibold text-gray-800 mb-3">Taking Interviews</h3>
             <Step num={5} title="Select interview type" desc="Choose: HR, Domain Skills, Behavioral, or Sales. Pick difficulty level and target role/industry." />
-            <Step num={6} title="Answer AI questions" desc="AI generates questions based on your profile and industry. Answer via text or voice." />
+            <Step num={6} title="Answer AI questions" desc="AI generates questions based on your profile and industry. Type your answer or click the Voice button to dictate (Whisper speech-to-text). Multiple recordings append to the answer." />
             <Step num={7} title="Get evaluated" desc="AI scores you on 4 dimensions: Communication, Domain Knowledge, Confidence, Structure." />
             <Step num={8} title="Review detailed feedback" desc="See your answer alongside AI feedback, strengths, weaknesses, and a suggested better answer." />
           </div>
@@ -173,14 +173,54 @@ export function UserGuidePage() {
             <h3 className="text-sm font-semibold text-gray-800 mb-3">Daily Operations</h3>
             <Step num={1} title="Review demo requests" desc="Companies requesting demos appear on your dashboard. Click 'Mark Contacted' after reaching out." />
             <Step num={2} title="Create company accounts" desc="After a demo call, create the company user via the Users page. Set role to 'company'." />
-            <Step num={3} title="Monitor platform health" desc="Settings page shows live status of database, AI models (Ollama), and auth configuration." />
+            <Step num={3} title="Manage subscriptions" desc="Assign or change subscription plans per user. Plans: Free, Pro Candidate (₹399/mo), College (₹149/student/yr), Company Starter (₹7,999/mo), Company Growth (₹24,999/mo), Enterprise." />
+            <Step num={4} title="Monitor platform health" desc="Monitoring dashboard shows real-time AI token usage, user activity (DAU/WAU/MAU), revenue metrics, and database status." />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Oversight</h3>
-            <Step num={4} title="Manage users" desc="Search, filter by role, change roles, activate/deactivate accounts. Paginated with 15 per page." />
-            <Step num={5} title="View analytics" desc="30-day interview trends, score distribution, users by role, interview type breakdown." />
-            <Step num={6} title="Anti-cheat monitoring" desc="View flagged interviews, expand for details. Flags: answer similarity, short answers, repeated patterns." />
+            <h3 className="text-sm font-semibold text-gray-800 mb-3">Oversight & Monitoring</h3>
+            <Step num={5} title="Manage users" desc="Search, filter by role, change roles, activate/deactivate accounts. Paginated with 15 per page." />
+            <Step num={6} title="View analytics" desc="30-day interview trends, score distribution, users by role, interview type breakdown." />
+            <Step num={7} title="Anti-cheat monitoring" desc="View flagged interviews, expand for details. Flags: answer similarity, short answers, repeated patterns." />
+            <Step num={8} title="Token & cost tracking" desc="Track OpenAI/Ollama token usage per user, per interview, per question. Click any interview row to drill down into per-question token breakdown with cost in ₹." />
           </div>
+        </div>
+
+        <div className="mt-4 bg-red-50 rounded-lg p-3 border border-red-200">
+          <h3 className="text-xs font-semibold text-red-800 mb-2">Monitoring Dashboard</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-[10px]">
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">AI Token Usage</span> — Per user, per action, daily chart, cost in ₹</div>
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Per-Interview Cost</span> — Click row to expand per-question tokens, provider, cost breakdown</div>
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">User Activity</span> — DAU/WAU/MAU, signup sources, active sessions</div>
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Revenue</span> — MRR, plan distribution, conversion rates, growth</div>
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Database Health</span> — Neon cloud status (online/offline), size, region, table count, connections</div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ===== PRICING & PAYMENTS ===== */}
+      <Section title="Pricing & Subscription Plans" icon={<Star size={18} className="text-emerald-600" />}>
+        <p className="text-xs text-gray-600 mb-3">All pricing is in Indian Rupees (INR). Payments are processed through Dodo Payments. Users see the pricing page before signing up.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {[
+            { plan: 'Free', price: '₹0', who: 'Candidates', limits: '3 interviews/month, basic difficulty only' },
+            { plan: 'Pro Candidate', price: '₹399/mo', who: 'Candidates', limits: 'Unlimited interviews, all difficulty levels, talent pool visibility' },
+            { plan: 'College', price: '₹149/student/yr', who: 'Placement Officers', limits: 'Unlimited interviews for all students, bulk CSV import' },
+            { plan: 'Company Starter', price: '₹7,999/mo', who: 'Companies', limits: '50 talent browses, 5 shortlists, 3 interview schedules/month' },
+            { plan: 'Company Growth', price: '₹24,999/mo', who: 'Companies', limits: 'Unlimited browses, 20 schedules, AI matching, CSV export' },
+            { plan: 'Enterprise', price: 'Custom', who: 'Large Orgs', limits: 'Unlimited everything, API access, dedicated support' },
+          ].map((p) => (
+            <div key={p.plan} className="bg-emerald-50 rounded-lg p-2 border border-emerald-100 text-center">
+              <p className="text-xs font-semibold text-emerald-800">{p.plan}</p>
+              <p className="text-sm font-bold text-emerald-600">{p.price}</p>
+              <p className="text-[9px] text-gray-500 mt-1">{p.who}</p>
+              <p className="text-[9px] text-gray-400 mt-1">{p.limits}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 bg-gray-50 rounded-lg p-2 text-[10px] text-gray-500">
+          <p><strong>Payment Flow:</strong> Homepage → Pricing Page → Select Plan → Dodo Payments Checkout → Payment Success → Signup/Login</p>
+          <p className="mt-1"><strong>Companies:</strong> Request Demo → Admin reviews → Account created with selected plan</p>
+          <p className="mt-1"><strong>Usage Enforcement:</strong> Each action (interview, browse, shortlist, schedule) is checked against plan limits before execution. Admin can override via plan management.</p>
         </div>
       </Section>
 
@@ -261,6 +301,13 @@ export function UserGuidePage() {
             { term: 'Anti-Cheat', def: 'System that detects answer similarity, repeated patterns, and enforces attempt limits.' },
             { term: 'Consent', def: 'Candidate must explicitly opt-in before their anonymized profile becomes visible to companies.' },
             { term: 'Demo Request', def: 'Companies request a demo via the portal. Admin reviews and creates their account after contact.' },
+            { term: 'Dodo Payments', def: 'Payment gateway used for subscription checkout. Supports INR. Handles plan activation via webhooks.' },
+            { term: 'Token Usage', def: 'LLM API calls consume tokens. Each call is tracked per user, per interview, per question — with provider, model, and cost (₹).' },
+            { term: 'Monitoring Dashboard', def: 'Admin-only page showing AI costs (with per-interview drill-down), user metrics (DAU/WAU/MAU), revenue, platform health, and database status.' },
+            { term: 'Subscription Plan', def: 'Defines usage limits (interviews, browses, shortlists, schedules). Enforced per action. Admin can assign plans.' },
+            { term: 'Voice Interview', def: 'Candidates can click the Mic button to record audio answers. Whisper (local or OpenAI) transcribes speech to text automatically.' },
+            { term: 'ErrorBoundary', def: 'Each section (student, company, college, admin) is isolated. A crash in one section shows a retry UI without breaking others.' },
+            { term: 'Toast Notifications', def: 'Global notification system. API errors automatically show a brief toast message (top-right corner) so failures are never silent.' },
           ].map((g) => (
             <div key={g.term} className="py-1.5 border-b border-gray-100">
               <span className="font-semibold text-gray-800">{g.term}</span> — <span className="text-gray-500">{g.def}</span>
@@ -281,6 +328,11 @@ export function UserGuidePage() {
             { q: 'Can placement officers see company feedback?', a: 'Yes. After each company interview, the star rating, outcome (Hire/Next Round/Reject), and notes are visible on the placement officer\'s dashboard.' },
             { q: 'How do companies get accounts?', a: 'Companies request a demo through the Company Portal. The Talexis admin reviews the request and creates their account after a demo call.' },
             { q: 'Can I export data?', a: 'Yes. Companies can export shortlists and match results as CSV files. The workflow page can be downloaded as PDF.' },
+            { q: 'How does pricing work?', a: 'Users see a pricing page before signing up. Payments are processed through Dodo Payments (INR). Plans range from Free (3 interviews/month) to Enterprise (unlimited). Companies go through a demo request flow instead.' },
+            { q: 'What does the admin monitoring dashboard show?', a: 'Real-time AI token usage with cost (₹), DAU/WAU/MAU user activity, revenue breakdown (MRR, plan distribution), platform health (error rate, response times), and database status (online/offline, size, region).' },
+            { q: 'How is AI cost tracked?', a: 'Every LLM call (question generation, evaluation, resume parsing) logs prompt and completion tokens, the provider (Ollama/OpenAI), and estimated cost in ₹. The admin sees per-user breakdown, daily trends, and can click any interview row to see per-question token detail.' },
+            { q: 'Can candidates use voice to answer?', a: 'Yes. Click the Voice/Mic button next to the answer box to record. The audio is transcribed by Whisper (local model or OpenAI fallback) and the text is added to the answer. Multiple recordings append to the same answer.' },
+            { q: 'What happens when something goes wrong?', a: 'API errors show a toast notification (top-right) with a clear message. If a page crashes, the ErrorBoundary shows a retry button without breaking the rest of the app. The sidebar and layout always stay functional.' },
           ].map((faq, i) => (
             <div key={i} className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs font-semibold text-gray-800 mb-1">{faq.q}</p>
