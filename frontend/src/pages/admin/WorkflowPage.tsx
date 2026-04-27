@@ -112,7 +112,7 @@ export function WorkflowPage() {
             { icon: <Brain size={12} />, label: 'Select Interview', desc: 'HR, Domain Skills, Behavioral, Sales' },
             { icon: <Lock size={12} />, label: 'Progressive Unlock', desc: 'Basic→Intermediate (5/10)→Advanced (6/10)' },
             { icon: <MessageSquare size={12} />, label: 'AI Questions', desc: 'Industry-specific topics (10 industries)' },
-            { icon: <ClipboardCheck size={12} />, label: 'Answer & Submit', desc: 'Text/voice, word count, timer tracked' },
+            { icon: <ClipboardCheck size={12} />, label: 'Answer & Submit', desc: 'Text or voice (Whisper STT), word count, timer' },
             { icon: <Star size={12} />, label: 'AI Evaluation', desc: '4 dimensions + summary + improved answer' },
           ]} />
           <FlowCard title="3. Review & Improve" role="student" steps={[
@@ -291,6 +291,39 @@ export function WorkflowPage() {
               <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded font-medium">Talent scores synced</span>
               <ArrowRight size={10} className="text-gray-300" />
               <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded font-medium">Anti-cheat runs</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">Token usage logged (per Q&A)</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Voice Interview Flow</h3>
+            <div className="flex items-center gap-2 flex-wrap text-[10px]">
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">Candidate clicks Mic button</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">Browser records audio (WebM)</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded font-medium">Whisper STT (local or OpenAI fallback)</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">Text appended to answer box</span>
+              <ArrowRight size={10} className="text-gray-300" />
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">Submit as normal</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Error Handling</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[10px]">
+              <div className="bg-red-50 rounded-lg p-2 border border-red-100">
+                <p className="font-medium text-red-700 mb-0.5">ErrorBoundary</p>
+                <p className="text-gray-500">Catches React crashes per section. Shows retry/reload UI.</p>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-2 border border-amber-100">
+                <p className="font-medium text-amber-700 mb-0.5">Toast Notifications</p>
+                <p className="text-gray-500">Auto-shows API errors (500, 403, 404, network). 5s dismiss.</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-2 border border-blue-100">
+                <p className="font-medium text-blue-700 mb-0.5">API Interceptor</p>
+                <p className="text-gray-500">401 → token refresh. Other errors → global toast.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -308,10 +341,11 @@ export function WorkflowPage() {
             { icon: <MessageSquare size={12} />, label: 'Demo Requests', desc: 'Review, contact, convert to accounts' },
           ]} />
           <FlowCard title="Monitoring" role="admin" steps={[
-            { icon: <Brain size={12} />, label: 'AI Token Usage', desc: 'Per user, per action, cost in ₹' },
+            { icon: <Brain size={12} />, label: 'AI Token Usage', desc: 'Per user, per interview, per question, cost in ₹' },
             { icon: <Users size={12} />, label: 'DAU / WAU / MAU', desc: 'Active users, signup source tracking' },
             { icon: <Star size={12} />, label: 'Revenue', desc: 'MRR, plan distribution, conversion rates' },
             { icon: <Shield size={12} />, label: 'Platform Health', desc: 'Error rate, response times, DB status' },
+            { icon: <ClipboardCheck size={12} />, label: 'Interview Cost Drill-down', desc: 'Click any interview → per-question tokens' },
           ]} />
           <FlowCard title="Analytics & Safety" role="admin" steps={[
             { icon: <TrendingUp size={12} />, label: '30-Day Trends', desc: 'Interviews, scores, users by role' },
@@ -410,7 +444,7 @@ export function WorkflowPage() {
             <p className="text-gray-500">React 19 + TypeScript</p>
             <p className="text-gray-500">Vite + Tailwind CSS 4</p>
             <p className="text-gray-500">Framer Motion</p>
-            <p className="text-gray-500">17 frontend tests (vitest)</p>
+            <p className="text-gray-500">ErrorBoundary + Toast system</p>
           </div>
           <div>
             <p className="font-medium text-gray-800">AI / LLM</p>
@@ -431,17 +465,18 @@ export function WorkflowPage() {
 
       {/* ===== Database Models ===== */}
       <GlassCard className="bg-gray-50 border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Database Models (22 tables)</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Database Models (28 tables)</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] text-gray-500">
           {[
             'users', 'refresh_tokens', 'student_profiles', 'skill_assessments',
-            'companies', 'job_roles', 'interviews', 'interview_questions',
+            'companies', 'job_roles', 'job_applications', 'interviews', 'interview_questions',
             'interview_answers', 'interview_attempts', 'answer_evaluations',
             'evaluation_runs', 'placement_readiness', 'readiness_history',
             'talent_profiles', 'company_shortlists', 'match_results',
             'learning_modules', 'student_learning_progress',
             'anti_cheat_logs', 'answer_similarities',
             'scheduled_interviews', 'college_recommendations', 'activity_logs',
+            'token_usage', 'user_activities', 'api_metrics', 'user_subscriptions',
           ].map((table) => (
             <span key={table} className="bg-white px-2 py-1 rounded border border-gray-200 font-mono">{table}</span>
           ))}

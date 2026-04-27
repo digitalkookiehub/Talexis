@@ -99,7 +99,7 @@ export function UserGuidePage() {
           <div>
             <h3 className="text-sm font-semibold text-gray-800 mb-3">Taking Interviews</h3>
             <Step num={5} title="Select interview type" desc="Choose: HR, Domain Skills, Behavioral, or Sales. Pick difficulty level and target role/industry." />
-            <Step num={6} title="Answer AI questions" desc="AI generates questions based on your profile and industry. Answer via text or voice." />
+            <Step num={6} title="Answer AI questions" desc="AI generates questions based on your profile and industry. Type your answer or click the Voice button to dictate (Whisper speech-to-text). Multiple recordings append to the answer." />
             <Step num={7} title="Get evaluated" desc="AI scores you on 4 dimensions: Communication, Domain Knowledge, Confidence, Structure." />
             <Step num={8} title="Review detailed feedback" desc="See your answer alongside AI feedback, strengths, weaknesses, and a suggested better answer." />
           </div>
@@ -181,14 +181,15 @@ export function UserGuidePage() {
             <Step num={5} title="Manage users" desc="Search, filter by role, change roles, activate/deactivate accounts. Paginated with 15 per page." />
             <Step num={6} title="View analytics" desc="30-day interview trends, score distribution, users by role, interview type breakdown." />
             <Step num={7} title="Anti-cheat monitoring" desc="View flagged interviews, expand for details. Flags: answer similarity, short answers, repeated patterns." />
-            <Step num={8} title="Token & cost tracking" desc="Track OpenAI/Ollama token usage per user, per action. View cost in ₹, top consumers, and daily trends." />
+            <Step num={8} title="Token & cost tracking" desc="Track OpenAI/Ollama token usage per user, per interview, per question. Click any interview row to drill down into per-question token breakdown with cost in ₹." />
           </div>
         </div>
 
         <div className="mt-4 bg-red-50 rounded-lg p-3 border border-red-200">
           <h3 className="text-xs font-semibold text-red-800 mb-2">Monitoring Dashboard</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-[10px]">
             <div className="bg-white rounded p-2"><span className="font-medium text-red-700">AI Token Usage</span> — Per user, per action, daily chart, cost in ₹</div>
+            <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Per-Interview Cost</span> — Click row to expand per-question tokens, provider, cost breakdown</div>
             <div className="bg-white rounded p-2"><span className="font-medium text-red-700">User Activity</span> — DAU/WAU/MAU, signup sources, active sessions</div>
             <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Revenue</span> — MRR, plan distribution, conversion rates, growth</div>
             <div className="bg-white rounded p-2"><span className="font-medium text-red-700">Database Health</span> — Neon cloud status (online/offline), size, region, table count, connections</div>
@@ -301,9 +302,12 @@ export function UserGuidePage() {
             { term: 'Consent', def: 'Candidate must explicitly opt-in before their anonymized profile becomes visible to companies.' },
             { term: 'Demo Request', def: 'Companies request a demo via the portal. Admin reviews and creates their account after contact.' },
             { term: 'Dodo Payments', def: 'Payment gateway used for subscription checkout. Supports INR. Handles plan activation via webhooks.' },
-            { term: 'Token Usage', def: 'LLM API calls consume tokens. Each call is tracked with provider, model, cost (₹), and linked to the user who triggered it.' },
-            { term: 'Monitoring Dashboard', def: 'Admin-only page showing AI costs, user metrics (DAU/WAU/MAU), revenue, platform health, and database status.' },
+            { term: 'Token Usage', def: 'LLM API calls consume tokens. Each call is tracked per user, per interview, per question — with provider, model, and cost (₹).' },
+            { term: 'Monitoring Dashboard', def: 'Admin-only page showing AI costs (with per-interview drill-down), user metrics (DAU/WAU/MAU), revenue, platform health, and database status.' },
             { term: 'Subscription Plan', def: 'Defines usage limits (interviews, browses, shortlists, schedules). Enforced per action. Admin can assign plans.' },
+            { term: 'Voice Interview', def: 'Candidates can click the Mic button to record audio answers. Whisper (local or OpenAI) transcribes speech to text automatically.' },
+            { term: 'ErrorBoundary', def: 'Each section (student, company, college, admin) is isolated. A crash in one section shows a retry UI without breaking others.' },
+            { term: 'Toast Notifications', def: 'Global notification system. API errors automatically show a brief toast message (top-right corner) so failures are never silent.' },
           ].map((g) => (
             <div key={g.term} className="py-1.5 border-b border-gray-100">
               <span className="font-semibold text-gray-800">{g.term}</span> — <span className="text-gray-500">{g.def}</span>
@@ -326,7 +330,9 @@ export function UserGuidePage() {
             { q: 'Can I export data?', a: 'Yes. Companies can export shortlists and match results as CSV files. The workflow page can be downloaded as PDF.' },
             { q: 'How does pricing work?', a: 'Users see a pricing page before signing up. Payments are processed through Dodo Payments (INR). Plans range from Free (3 interviews/month) to Enterprise (unlimited). Companies go through a demo request flow instead.' },
             { q: 'What does the admin monitoring dashboard show?', a: 'Real-time AI token usage with cost (₹), DAU/WAU/MAU user activity, revenue breakdown (MRR, plan distribution), platform health (error rate, response times), and database status (online/offline, size, region).' },
-            { q: 'How is AI cost tracked?', a: 'Every LLM call (question generation, evaluation, resume parsing) logs prompt and completion tokens, the provider (Ollama/OpenAI), and estimated cost in ₹. The admin sees per-user breakdown and daily trends.' },
+            { q: 'How is AI cost tracked?', a: 'Every LLM call (question generation, evaluation, resume parsing) logs prompt and completion tokens, the provider (Ollama/OpenAI), and estimated cost in ₹. The admin sees per-user breakdown, daily trends, and can click any interview row to see per-question token detail.' },
+            { q: 'Can candidates use voice to answer?', a: 'Yes. Click the Voice/Mic button next to the answer box to record. The audio is transcribed by Whisper (local model or OpenAI fallback) and the text is added to the answer. Multiple recordings append to the same answer.' },
+            { q: 'What happens when something goes wrong?', a: 'API errors show a toast notification (top-right) with a clear message. If a page crashes, the ErrorBoundary shows a retry button without breaking the rest of the app. The sidebar and layout always stay functional.' },
           ].map((faq, i) => (
             <div key={i} className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs font-semibold text-gray-800 mb-1">{faq.q}</p>
